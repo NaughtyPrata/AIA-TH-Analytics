@@ -47,22 +47,19 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                             Session Details
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Agent Performance
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
+                            Performance
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Scenario & Messages
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
+                            Scenario
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Skill Breakdown
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/5">
+                            AI Feedback & Areas
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status & Feedback
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
                             Actions
                         </th>
                     </tr>
@@ -203,69 +200,54 @@ function renderSessions(sessions) {
     
     tbody.innerHTML = sessions.map(session => `
         <tr class="hover:bg-gray-50" data-session-id="${session.session_id}">
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-4 py-4">
                 <div class="text-sm font-medium text-gray-900">${session.session_id}</div>
                 <div class="text-sm text-gray-500">Agent: ${session.agent_id}</div>
                 <div class="text-xs text-gray-400">${formatDateTime(session.practice_date)}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                    <div class="flex-1">
-                        <div class="text-lg font-bold ${getScoreColor(session.performance_score)}">${session.performance_score}/5.0</div>
-                        <div class="text-xs text-gray-500">Overall Score</div>
-                    </div>
-                    <div class="ml-3">
-                        ${getPerformanceBadge(session.performance_score)}
-                    </div>
+            <td class="px-4 py-4 text-center">
+                <div class="text-lg font-bold ${getScoreColor(session.performance_score)}">${session.performance_score}/5.0</div>
+                <div class="mt-1">
+                    ${getPerformanceBadge(session.performance_score)}
                 </div>
             </td>
-            <td class="px-6 py-4">
-                <div class="text-sm text-gray-900">${session.scenario_type}</div>
-                <div class="text-xs text-gray-500">${session.total_messages} messages</div>
-                <div class="text-xs text-gray-400">${session.customer_messages} customer / ${session.agent_messages} agent</div>
+            <td class="px-4 py-4 text-center">
+                <div class="text-sm text-gray-900 font-medium">${session.scenario_type}</div>
+                <div class="text-xs text-gray-500 mt-1">${session.total_messages} messages</div>
             </td>
-            <td class="px-6 py-4">
-                <div class="space-y-1">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs text-gray-600">Product Pitch</span>
-                        <span class="text-xs font-medium ${getScoreColor(session.product_pitch_score)}">${session.product_pitch_score}/5</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs text-gray-600">Objection Handling</span>
-                        <span class="text-xs font-medium ${getScoreColor(session.objection_handling_score)}">${session.objection_handling_score}/5</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs text-gray-600">Communication</span>
-                        <span class="text-xs font-medium ${getScoreColor(session.communication_skills_score)}">${session.communication_skills_score}/5</span>
-                    </div>
-                </div>
-            </td>
-            <td class="px-6 py-4">
+            <td class="px-4 py-4">
                 <div class="mb-2">
                     <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(session.practice_status)}">
                         ${session.practice_status}
                     </span>
                 </div>
-                <div class="text-xs text-gray-600 max-w-xs">
+                <div class="text-sm text-gray-700 mb-2 leading-relaxed">
                     ${session.ai_feedback}
                 </div>
-                ${session.strengths.length > 0 ? `
-                    <div class="mt-1">
-                        <span class="text-xs text-green-600">✓ ${session.strengths.join(', ')}</span>
+                <div class="space-y-1">
+                    ${session.strengths.length > 0 ? `
+                        <div class="flex items-start">
+                            <span class="text-green-600 text-xs mr-1">✓</span>
+                            <span class="text-xs text-green-700"><strong>Strengths:</strong> ${session.strengths.join(', ')}</span>
+                        </div>
+                    ` : ''}
+                    ${session.improvement_areas.length > 0 ? `
+                        <div class="flex items-start">
+                            <span class="text-orange-600 text-xs mr-1">⚠</span>
+                            <span class="text-xs text-orange-700"><strong>Improve:</strong> ${session.improvement_areas.join(', ')}</span>
+                        </div>
+                    ` : ''}
+                    <div class="text-xs text-gray-500 mt-2">
+                        <strong>Scores:</strong> Product Pitch: ${session.product_pitch_score}/5, Objection: ${session.objection_handling_score}/5, Communication: ${session.communication_skills_score}/5
                     </div>
-                ` : ''}
-                ${session.improvement_areas.length > 0 ? `
-                    <div class="mt-1">
-                        <span class="text-xs text-orange-600">⚠ ${session.improvement_areas.join(', ')}</span>
-                    </div>
-                ` : ''}
+                </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button onclick="viewSessionDetails('${session.session_id}')" class="text-red-600 hover:text-red-700 block mb-1">
+            <td class="px-4 py-4 text-center">
+                <button onclick="viewSessionDetails('${session.session_id}')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs mb-2 block w-full">
                     View Details
                 </button>
-                <button onclick="downloadSessionReport('${session.session_id}')" class="text-blue-600 hover:text-blue-700 text-xs">
-                    Download Report
+                <button onclick="downloadSessionReport('${session.session_id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs block w-full">
+                    Download
                 </button>
             </td>
         </tr>
