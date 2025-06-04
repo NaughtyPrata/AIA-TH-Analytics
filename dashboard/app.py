@@ -354,12 +354,19 @@ def api_agent_performance_overview():
         total_sessions = df['Conversation ID'].nunique()
         unique_agents = df['Agent ID'].nunique() if 'Agent ID' in df.columns else 1
         
-        # Quick analysis of few sessions for overview
-        sample_sessions = []
-        for conv_id in df['Conversation ID'].unique()[:10]:  # Sample first 10
-            conv_data = df[df['Conversation ID'] == conv_id]
-            session_summary = get_session_summary(conv_id, conv_data)
-            sample_sessions.append(session_summary)
+        # Use cached processed sessions if available (from refresh), otherwise analyze sample
+        if 'processed_sessions' in cache:
+            sample_sessions = cache['processed_sessions']
+            print(f"📊 Using cached analysis for {len(sample_sessions)} sessions")
+            print(f"📅 Cache timestamp: {cache.get('last_refresh', 'Unknown')}")
+        else:
+            # Quick analysis of sample sessions
+            sample_sessions = []
+            for conv_id in df['Conversation ID'].unique()[:10]:  # Sample first 10
+                conv_data = df[df['Conversation ID'] == conv_id]
+                session_summary = get_session_summary(conv_id, conv_data)
+                sample_sessions.append(session_summary)
+            print(f"📊 Generated fresh analysis for {len(sample_sessions)} sessions")
         
         if sample_sessions:
             avg_performance = np.mean([s['performance_score'] for s in sample_sessions])
@@ -371,29 +378,49 @@ def api_agent_performance_overview():
             excellent_count = len([s for s in sample_sessions if s['performance_score'] >= 4.0])
             good_count = len([s for s in sample_sessions if 3.0 <= s['performance_score'] < 4.0])
             needs_improvement_count = len([s for s in sample_sessions if s['performance_score'] < 3.0])
+            
+            # Calculate improvement rate based on session trend
+            if len(sample_sessions) > 5:
+                first_half = sample_sessions[:len(sample_sessions)//2]
+                second_half = sample_sessions[len(sample_sessions)//2:]
+                first_avg = np.mean([s['performance_score'] for s in first_half])
+                second_avg = np.mean([s['performance_score'] for s in second_half])
+                improvement = ((second_avg - first_avg) / first_avg) * 100 if first_avg > 0 else 0
+                improvement_rate = f"+{improvement:.1f}%" if improvement > 0 else f"{improvement:.1f}%"
+            else:
+                improvement_rate = "+0.0%"
         else:
             avg_performance = 0
             avg_product_pitch = avg_objection_handling = avg_communication = 0
             excellent_count = good_count = needs_improvement_count = 0
+            improvement_rate = "+0.0%"
+        
+        # Determine analysis status
+        has_analysis = len(sample_sessions) > 0
+        if 'processed_sessions' in cache:
+            analysis_status = f'✅ AI Analysis Complete - {len(sample_sessions)} sessions analyzed with detailed insights'
+        else:
+            analysis_status = f'📊 Sample analysis of {len(sample_sessions)} sessions. Click "Refresh AI Insights" for comprehensive analysis.'
         
         performance_data = {
             'total_agents': unique_agents,
             'total_sessions': total_sessions,
             'avg_performance': round(avg_performance, 1),
+            'improvement_rate': improvement_rate,
             'sessions_analyzed': len(sample_sessions),
-            'has_analysis': len(sample_sessions) > 0,
-            'analysis_status': f'Analyzed {len(sample_sessions)} sample sessions. Click "Analyze All Sessions" for complete analysis.',
+            'has_analysis': has_analysis,
+            'analysis_status': analysis_status,
             'product_pitch': {
                 'score': round(avg_product_pitch, 1),
-                'status': 'good' if avg_product_pitch >= 3.5 else 'needs-improvement' if avg_product_pitch >= 2.5 else 'poor'
+                'status': 'excellent' if avg_product_pitch >= 4.0 else 'good' if avg_product_pitch >= 3.5 else 'needs-improvement' if avg_product_pitch >= 2.5 else 'poor'
             },
             'objection_handling': {
                 'score': round(avg_objection_handling, 1),
-                'status': 'good' if avg_objection_handling >= 3.5 else 'needs-improvement' if avg_objection_handling >= 2.5 else 'poor'
+                'status': 'excellent' if avg_objection_handling >= 4.0 else 'good' if avg_objection_handling >= 3.5 else 'needs-improvement' if avg_objection_handling >= 2.5 else 'poor'
             },
             'communication': {
                 'score': round(avg_communication, 1),
-                'status': 'good' if avg_communication >= 3.5 else 'needs-improvement' if avg_communication >= 2.5 else 'poor'
+                'status': 'excellent' if avg_communication >= 4.0 else 'good' if avg_communication >= 3.5 else 'needs-improvement' if avg_communication >= 2.5 else 'poor'
             },
             'performance_distribution': {
                 'excellent': excellent_count,
@@ -415,12 +442,19 @@ def api_agent_performance_overview():
                     'session_id': session['session_id'],
                     'issue_type': 'low_performance',
                     'weakest_area': session['improvement_areas'][0] if session['improvement_areas'] else 'General',
+                    'weakest_score': min(session['product_pitch_score'], session['objection_handling_score'], session['communication_skills_score']),
                     'overall_score': session['performance_score']
                 }
                 for session in sorted(sample_sessions, key=lambda x: x['performance_score'])[:3]
                 if session['performance_score'] < 3.0
             ]
         }
+        
+        print(f"🎯 Dashboard data summary:")
+        print(f"   Avg Performance: {performance_data['avg_performance']}")
+        print(f"   Sessions Analyzed: {performance_data['sessions_analyzed']}")
+        print(f"   Analysis Status: {performance_data['analysis_status']}")
+        print(f"   Has Cached Data: {'processed_sessions' in cache}")
         
         return jsonify(performance_data)
         
@@ -499,6 +533,76 @@ def api_training_recommendations():
             "recommendations": recommendations_list
         }
         return jsonify(recommendations)
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+@app.route('/api/refresh-ai-insights', methods=['POST'])
+def api_refresh_ai_insights():
+    """API endpoint to refresh AI insights"""
+    try:
+        print("🔄 Starting AI insights refresh...")
+        
+        # Clear the cache to force re-analysis
+        global cache
+        cache.clear()
+        print("🗑️ Cache cleared")
+        
+        # Force re-analysis of sessions by processing more data
+        df = pd.read_csv(LOG_FILE_PATH)
+        df.columns = df.columns.str.strip()
+        df = df[df['Message Role'] != 'N/A']
+        df = df[df['Message Text'].notna()]
+        df = df[df['Message Text'] != 'No transcript available']
+        
+        print(f"📊 Processing data: {len(df)} rows, {df['Conversation ID'].nunique()} unique conversations")
+        
+        # Process more sessions for better analysis
+        processed_sessions = []
+        conversation_ids = df['Conversation ID'].unique()[:50]  # Process up to 50 sessions
+        
+        print(f"🔍 Analyzing {len(conversation_ids)} conversations...")
+        
+        for i, conv_id in enumerate(conversation_ids):
+            conv_data = df[df['Conversation ID'] == conv_id]
+            session_summary = get_session_summary(conv_id, conv_data)
+            processed_sessions.append(session_summary)
+            if i % 10 == 0:
+                print(f"   Processed {i+1}/{len(conversation_ids)} sessions...")
+        
+        # Store processed data in cache for faster dashboard loading
+        cache['processed_sessions'] = processed_sessions
+        cache['last_refresh'] = datetime.now()
+        
+        print(f"✅ Analysis complete! Cached {len(processed_sessions)} sessions")
+        print(f"📈 Sample session scores: {[s['performance_score'] for s in processed_sessions[:5]]}")
+        
+        return jsonify({
+            "status": "success",
+            "message": f"Successfully refreshed AI insights for {len(processed_sessions)} sessions",
+            "sessions_processed": len(processed_sessions)
+        })
+        
+    except Exception as e:
+        print(f"❌ Error in refresh_ai_insights: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)})
+
+@app.route('/api/generate-performance-report')
+def api_generate_performance_report():
+    """API endpoint to generate performance report"""
+    if not ai_analyzer:
+        return jsonify({"error": "AI Analyzer not available"})
+    
+    try:
+        filename = f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        result = ai_analyzer.generate_full_report(f"../{filename}")
+        
+        return jsonify({
+            "status": "success",
+            "message": result,
+            "filename": filename
+        })
     except Exception as e:
         return jsonify({"error": str(e)})
 

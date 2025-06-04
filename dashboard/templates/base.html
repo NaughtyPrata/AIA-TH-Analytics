@@ -24,58 +24,26 @@
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
-        <aside class="bg-white shadow-md w-64 hidden md:block flex-shrink-0">
-            <div class="flex items-center justify-center h-16 border-b">
-                <span class="text-red-600 font-bold text-xl">AIA Analytics</span>
-            </div>
-            <nav class="mt-5">
-                <ul>
-                    <li class="px-5">
-                        <a href="/" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
-                            <i class="lni lni-dashboard mr-3"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="px-5">
-                        <a href="/agents" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
-                            <i class="lni lni-users mr-3"></i>
-                            <span>Agents</span>
-                        </a>
-                    </li>
-                    <li class="px-5">
-                        <a href="/sessions" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
-                            <i class="lni lni-graduation mr-3"></i>
-                            <span>Practice Sessions</span>
-                        </a>
-                    </li>
-                    <li class="px-5">
-                        <a href="/trends" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
-                            <i class="lni lni-stats-up mr-3"></i>
-                            <span>Trends</span>
-                        </a>
-                    </li>
-                    <li class="px-5">
-                        <a href="/settings" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
-                            <i class="lni lni-cog mr-3"></i>
-                            <span>Settings</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
-
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Header -->
+            <!-- Header with Navigation -->
             <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6">
                 <div class="flex items-center">
-                    <button class="md:hidden mr-4 text-gray-600">
-                        <i class="lni lni-menu text-xl"></i>
-                    </button>
-                    <h1 class="text-xl font-semibold text-gray-800">{% block header %}Dashboard{% endblock %}</h1>
+                    <span class="text-red-600 font-bold text-xl mr-8">AIA Analytics</span>
+                    <!-- Top Navigation -->
+                    <nav class="flex space-x-6">
+                        <a href="/" class="flex items-center px-3 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors {% if request.endpoint == 'index' %}bg-red-100 text-red-700 font-medium{% endif %}">
+                            <i class="lni lni-dashboard mr-2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="/sessions" class="flex items-center px-3 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors {% if request.endpoint == 'sessions' %}bg-red-100 text-red-700 font-medium{% endif %}">
+                            <i class="lni lni-graduation mr-2"></i>
+                            <span>Practice Sessions</span>
+                        </a>
+                    </nav>
                 </div>
                 <div class="flex items-center">
+                    <h1 class="text-xl font-semibold text-gray-800 mr-6">{% block header %}Dashboard{% endblock %}</h1>
                     <div class="relative mr-4">
                         <input type="text" placeholder="Search..." class="w-64 pr-8 pl-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300">
                         <i class="lni lni-search absolute right-3 top-2.5 text-gray-400"></i>
