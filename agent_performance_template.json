@@ -1,0 +1,157 @@
+{
+  "conversation_id": "[CONVERSATION_ID]",
+  "agent_id": "[AGENT_ID]",
+  "analysis_timestamp": "[TIMESTAMP]",
+  "session_metadata": {
+    "practice_scenario": "[SCENARIO_TYPE]",
+    "customer_persona": "[CUSTOMER_TYPE]",
+    "difficulty_level": "[EASY/MEDIUM/HARD]"
+  },
+  "performance_scores": {
+    "product_pitch": {
+      "category_average": "[CALCULATE_AVERAGE]",
+      "metrics": {
+        "explain_benefits_of_insurance": {
+          "score": "[1-5]",
+          "explanation": "[Why this score? What did the agent do well/poorly?]",
+          "evidence": "[Specific quote or behavior from conversation]"
+        },
+        "explain_product_details": {
+          "score": "[1-5]",
+          "explanation": "[Why this score? Accuracy and completeness assessment]",
+          "evidence": "[Specific examples of product explanations]"
+        },
+        "answer_product_questions": {
+          "score": "[1-5]",
+          "explanation": "[Confidence and correctness evaluation]",
+          "evidence": "[How well did agent handle customer questions?]"
+        },
+        "close_conversation_with_next_appointment_or_sale": {
+          "score": "[1-5]",
+          "explanation": "[Did agent successfully guide toward next step?]",
+          "evidence": "[Closing technique used and effectiveness]"
+        },
+        "final_feedback": {
+          "score": "[1-5]",
+          "explanation": "[Overall product pitch performance summary]",
+          "evidence": "[Key strengths and weaknesses observed]"
+        }
+      }
+    },
+    "objection_handling": {
+      "category_average": "[CALCULATE_AVERAGE]",
+      "metrics": {
+        "listening_to_objections": {
+          "score": "[1-5]",
+          "explanation": "[Did agent actively listen without interrupting?]",
+          "evidence": "[Examples of listening behavior or lack thereof]"
+        },
+        "acknowledging_objections": {
+          "score": "[1-5]",
+          "explanation": "[Did agent show understanding and empathy?]",
+          "evidence": "[How agent responded to customer concerns]"
+        },
+        "defusing_objections": {
+          "score": "[1-5]",
+          "explanation": "[Effectiveness of logic, data, or empathy used]",
+          "evidence": "[Specific techniques used to address concerns]"
+        },
+        "refocusing_the_customer": {
+          "score": "[1-5]",
+          "explanation": "[Ability to redirect conversation toward value/sale]",
+          "evidence": "[How agent steered conversation back on track]"
+        },
+        "final_feedback": {
+          "score": "[1-5]",
+          "explanation": "[Overall objection handling performance summary]",
+          "evidence": "[Key strengths and improvement areas]"
+        }
+      }
+    },
+    "communication_skills": {
+      "category_average": "[CALCULATE_AVERAGE]",
+      "metrics": {
+        "small_talk": {
+          "score": "[1-5]",
+          "explanation": "[Naturalness and appropriateness of opening conversation]",
+          "evidence": "[Quality of rapport-building at start]"
+        },
+        "content_organisation": {
+          "score": "[1-5]",
+          "explanation": "[Logical and clear flow of ideas throughout]",
+          "evidence": "[Structure and coherence of presentation]"
+        },
+        "building_rapport": {
+          "score": "[1-5]",
+          "explanation": "[Warmth, empathy, and trust-building displayed]",
+          "evidence": "[Specific rapport-building behaviors observed]"
+        },
+        "give_relevant_examples": {
+          "score": "[1-5]",
+          "explanation": "[Quality of analogies, scenarios, and case studies used]",
+          "evidence": "[Examples provided and their effectiveness]"
+        },
+        "active_listening": {
+          "score": "[1-5]",
+          "explanation": "[Detection and appropriate response to customer cues]",
+          "evidence": "[How well agent picked up on customer signals]"
+        },
+        "closing": {
+          "score": "[1-5]",
+          "explanation": "[Effectiveness of conversation summary and ending]",
+          "evidence": "[How agent wrapped up the interaction]"
+        },
+        "final_feedback": {
+          "score": "[1-5]",
+          "explanation": "[Overall communication skills performance summary]",
+          "evidence": "[Key communication strengths and areas for improvement]"
+        }
+      }
+    }
+  },
+  "overall_performance": {
+    "total_average_score": "[CALCULATE_OVERALL_AVERAGE]",
+    "performance_level": "[EXCELLENT/GOOD/NEEDS_IMPROVEMENT/POOR]",
+    "session_outcome": "[SUCCESS/PARTIAL_SUCCESS/UNSUCCESSFUL]",
+    "key_strengths": [
+      "[PRIMARY_STRENGTH_1]",
+      "[PRIMARY_STRENGTH_2]",
+      "[PRIMARY_STRENGTH_3]"
+    ],
+    "improvement_areas": [
+      "[PRIORITY_IMPROVEMENT_1]",
+      "[PRIORITY_IMPROVEMENT_2]",
+      "[PRIORITY_IMPROVEMENT_3]"
+    ],
+    "training_recommendations": [
+      "[SPECIFIC_TRAINING_SUGGESTION_1]",
+      "[SPECIFIC_TRAINING_SUGGESTION_2]",
+      "[SPECIFIC_TRAINING_SUGGESTION_3]"
+    ]
+  },
+  "consistency_metrics": {
+    "response_time_appropriateness": "[1-5]",
+    "tone_consistency": "[1-5]",
+    "script_adherence": "[1-5]",
+    "professionalism_maintained": "[1-5]"
+  },
+  "conversation_analysis": {
+    "total_agent_speaking_time": "[PERCENTAGE]",
+    "customer_engagement_level": "[HIGH/MEDIUM/LOW]",
+    "objections_encountered": "[NUMBER]",
+    "objections_successfully_handled": "[NUMBER]",
+    "key_conversation_moments": [
+      {
+        "timestamp": "[TIME_IN_CONVERSATION]",
+        "moment_type": "[STRENGTH/WEAKNESS/CRITICAL_POINT]",
+        "description": "[WHAT_HAPPENED]",
+        "impact": "[POSITIVE/NEGATIVE/NEUTRAL]"
+      }
+    ]
+  },
+  "comparative_performance": {
+    "vs_previous_sessions": "[IMPROVED/SAME/DECLINED]",
+    "vs_team_average": "[ABOVE/AT/BELOW]",
+    "consistency_score": "[1-5]"
+  }
+}

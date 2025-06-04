@@ -204,7 +204,7 @@
             </div>
         </div>
 
-        <!-- AI Actions (Kept from original) -->
+        <!-- AI Actions -->
         <div class="bg-white rounded-lg shadow">
             <div class="p-6 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">AI Actions</h3>
@@ -227,40 +227,21 @@
         </div>
     </div>
 
-    <!-- Detailed Skills Breakdown -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900">Detailed Skills Analysis</h3>
-                    <p class="text-sm text-gray-500">Individual metric performance across all agents</p>
-                </div>
-                <button class="text-red-600 hover:text-red-700 text-sm font-medium">
-                    View Full Analysis →
-                </button>
+    <!-- Analysis Status -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900">AI Analysis Status</h3>
+                <p class="text-sm text-gray-500" id="analysis-status">Ready to analyze agent performances</p>
             </div>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Skill Category</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specific Metric</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average Score</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Top Performer</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Needs Improvement</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="skills-table" class="bg-white divide-y divide-gray-200">
-                    <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                            <i class="lni lni-spinner-arrow text-2xl animate-spin"></i>
-                            <p class="mt-2">Loading detailed skills analysis...</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="flex space-x-2">
+                <span class="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full" id="analyzer-status">
+                    ✅ Analyzer Ready
+                </span>
+                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full" id="total-analyzed">
+                    0 Analyzed
+                </span>
+            </div>
         </div>
     </div>
 </div>
@@ -276,7 +257,10 @@
                 </button>
             </div>
             <div id="training-content" class="max-h-96 overflow-y-auto">
-                <!-- Dynamic content will be loaded here -->
+                <div class="text-center py-4">
+                    <i class="lni lni-spinner-arrow text-2xl animate-spin text-gray-400"></i>
+                    <p class="mt-2 text-gray-500">Loading training recommendations...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -312,57 +296,65 @@
 <script>
 let trendsChart;
 
-// Load dashboard data
+// Load agent performance data
 async function loadPerformanceData() {
     try {
+        document.getElementById('analysis-status').textContent = 'Loading agent performance data...';
+        
         const response = await fetch('/api/agent-performance-overview');
         const data = await response.json();
         
-        // Update overview cards with sample data for now
-        document.getElementById('total-agents').textContent = data.total_agents || 12;
-        document.getElementById('total-sessions').textContent = data.total_sessions || 247;
-        document.getElementById('avg-performance').textContent = data.avg_performance || '3.6';
-        document.getElementById('improvement-rate').textContent = data.improvement_rate || '+12%';
+        if (data.error) {
+            document.getElementById('analysis-status').textContent = `Error: ${data.error}`;
+            document.getElementById('analyzer-status').textContent = '❌ Error';
+            return;
+        }
         
-        // Update star ratings
-        updateStarRating('avg-performance-stars', data.avg_performance || 3.6);
+        // Update overview cards
+        document.getElementById('total-agents').textContent = data.total_agents || 0;
+        document.getElementById('total-sessions').textContent = data.total_sessions || 0;
+        document.getElementById('avg-performance').textContent = data.avg_performance || 0;
+        document.getElementById('improvement-rate').textContent = data.improvement_rate || '+0%';
+        document.getElementById('total-analyzed').textContent = `${data.total_analyzed || 0} Analyzed`;
         
-        // Update skill categories with sample data
-        updateSkillCategory('product-pitch', data.product_pitch || { score: 3.9, status: 'good' });
-        updateSkillCategory('objection', data.objection_handling || { score: 3.1, status: 'needs-improvement' });
-        updateSkillCategory('communication', data.communication || { score: 3.6, status: 'good' });
+        // Update star rating for average performance
+        updateStarRating('avg-performance-stars', data.avg_performance || 0);
         
-        // Load other sections
-        loadTopPerformers(data.top_performers);
-        loadNeedsAttention(data.needs_attention);
-        loadSkillsTable(data.detailed_skills);
+        // Update skill categories
+        if (data.product_pitch) {
+            updateSkillCategory('product-pitch', data.product_pitch);
+        }
+        if (data.objection_handling) {
+            updateSkillCategory('objection', data.objection_handling);
+        }
+        if (data.communication) {
+            updateSkillCategory('communication', data.communication);
+        }
+        
+        // Update insights sections
+        displayTopPerformers(data.top_performers || []);
+        displayNeedsAttention(data.needs_attention || []);
+        
+        // Update analysis status
+        if (data.has_analysis) {
+            document.getElementById('analysis-status').textContent = data.analysis_status;
+            document.getElementById('analyzer-status').textContent = '✅ Analysis Ready';
+        } else {
+            document.getElementById('analysis-status').textContent = data.analysis_status;
+            document.getElementById('analyzer-status').textContent = '⚠️ No Analysis';
+        }
         
     } catch (error) {
         console.error('Error loading performance data:', error);
-        // Show sample data as fallback
-        loadSampleData();
+        document.getElementById('analysis-status').textContent = `Error: ${error.message}`;
+        document.getElementById('analyzer-status').textContent = '❌ Failed';
     }
-}
-
-function loadSampleData() {
-    // Sample data for demonstration
-    document.getElementById('total-agents').textContent = '12';
-    document.getElementById('total-sessions').textContent = '247';
-    document.getElementById('avg-performance').textContent = '3.6';
-    document.getElementById('improvement-rate').textContent = '+12%';
-    
-    updateStarRating('avg-performance-stars', 3.6);
-    updateSkillCategory('product-pitch', { score: 3.9, status: 'good' });
-    updateSkillCategory('objection', { score: 3.1, status: 'needs-improvement' });
-    updateSkillCategory('communication', { score: 3.6, status: 'good' });
-    
-    loadSampleTopPerformers();
-    loadSampleNeedsAttention();
-    loadSampleSkillsTable();
 }
 
 function updateStarRating(elementId, score) {
     const container = document.getElementById(elementId);
+    if (!container) return;
+    
     const stars = container.querySelectorAll('.star');
     const fullStars = Math.floor(score);
     
@@ -376,15 +368,23 @@ function updateStarRating(elementId, score) {
 }
 
 function updateSkillCategory(category, data) {
-    document.getElementById(`${category}-score`).textContent = data.score;
+    const scoreElement = document.getElementById(`${category}-score`);
+    const barElement = document.getElementById(`${category}-bar`);
+    const badgeElement = document.getElementById(`${category}-badge`);
+    
+    if (scoreElement) scoreElement.textContent = data.score;
+    
     updateStarRating(`${category}-stars`, data.score);
     
-    const percentage = (data.score / 5) * 100;
-    document.getElementById(`${category}-bar`).style.width = `${percentage}%`;
+    if (barElement) {
+        const percentage = (data.score / 5) * 100;
+        barElement.style.width = `${percentage}%`;
+    }
     
-    const badge = document.getElementById(`${category}-badge`);
-    badge.textContent = getStatusText(data.status);
-    badge.className = `performance-badge ${data.status}`;
+    if (badgeElement) {
+        badgeElement.textContent = getStatusText(data.status);
+        badgeElement.className = `performance-badge ${data.status}`;
+    }
 }
 
 function getStatusText(status) {
@@ -397,169 +397,71 @@ function getStatusText(status) {
     return statusMap[status] || 'Unknown';
 }
 
-function loadSampleTopPerformers() {
+function displayTopPerformers(performers) {
     const container = document.getElementById('top-performers');
-    container.innerHTML = `
+    
+    if (!performers || performers.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-500 py-4">No performance data available</div>';
+        return;
+    }
+    
+    container.innerHTML = performers.map(performer => `
         <div class="flex items-center justify-between">
             <div class="flex items-center">
-                <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
-                    <span class="text-yellow-600 font-semibold text-sm">1</span>
+                <div class="w-8 h-8 bg-${performer.rank === 1 ? 'yellow' : 'gray'}-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-${performer.rank === 1 ? 'yellow' : 'gray'}-600 font-semibold text-sm">${performer.rank}</span>
                 </div>
                 <div>
-                    <p class="font-medium text-gray-900">Sarah Chen</p>
-                    <p class="text-xs text-gray-500">12 sessions</p>
+                    <p class="font-medium text-gray-900">Agent ${performer.agent_id}</p>
+                    <p class="text-xs text-gray-500">${performer.conversation_id}</p>
                 </div>
             </div>
             <div class="text-right">
-                <p class="font-semibold text-gray-900">4.3</p>
+                <p class="font-semibold text-gray-900">${performer.overall_score.toFixed(1)}</p>
                 <div class="star-rating">
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
+                    ${generateStars(performer.overall_score)}
                 </div>
             </div>
         </div>
-        
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
-                    <span class="text-gray-600 font-semibold text-sm">2</span>
-                </div>
-                <div>
-                    <p class="font-medium text-gray-900">Mike Rodriguez</p>
-                    <p class="text-xs text-gray-500">15 sessions</p>
-                </div>
-            </div>
-            <div class="text-right">
-                <p class="font-semibold text-gray-900">4.1</p>
-                <div class="star-rating">
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star empty">★</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
-                    <span class="text-gray-600 font-semibold text-sm">3</span>
-                </div>
-                <div>
-                    <p class="font-medium text-gray-900">Lisa Wang</p>
-                    <p class="text-xs text-gray-500">9 sessions</p>
-                </div>
-            </div>
-            <div class="text-right">
-                <p class="font-semibold text-gray-900">3.9</p>
-                <div class="star-rating">
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star empty">★</span>
-                </div>
-            </div>
-        </div>
-    `;
+    `).join('');
 }
 
-function loadSampleNeedsAttention() {
+function displayNeedsAttention(needsAttention) {
     const container = document.getElementById('needs-attention');
-    container.innerHTML = `
+    
+    if (!needsAttention || needsAttention.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-500 py-4">All agents performing well</div>';
+        return;
+    }
+    
+    container.innerHTML = needsAttention.map(agent => `
         <div class="flex items-center justify-between">
             <div class="flex items-center">
-                <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
-                    <i class="lni lni-warning text-red-600 text-sm"></i>
+                <div class="w-8 h-8 bg-${agent.issue_type === 'low_performance' ? 'red' : 'yellow'}-100 rounded-full flex items-center justify-center mr-3">
+                    <i class="lni lni-warning text-${agent.issue_type === 'low_performance' ? 'red' : 'yellow'}-600 text-sm"></i>
                 </div>
                 <div>
-                    <p class="font-medium text-gray-900">John Smith</p>
-                    <p class="text-xs text-red-500">Objection handling: 2.1/5</p>
+                    <p class="font-medium text-gray-900">Agent ${agent.agent_id}</p>
+                    <p class="text-xs text-${agent.issue_type === 'low_performance' ? 'red' : 'yellow'}-500">${agent.weakest_area}: ${agent.weakest_score.toFixed(1)}/5</p>
                 </div>
             </div>
             <div class="text-right">
-                <p class="font-semibold text-gray-900">2.8</p>
+                <p class="font-semibold text-gray-900">${agent.overall_score.toFixed(1)}</p>
                 <div class="star-rating">
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star empty">★</span>
-                    <span class="star empty">★</span>
+                    ${generateStars(agent.overall_score)}
                 </div>
             </div>
         </div>
-        
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
-                    <i class="lni lni-warning text-yellow-600 text-sm"></i>
-                </div>
-                <div>
-                    <p class="font-medium text-gray-900">Emily Johnson</p>
-                    <p class="text-xs text-yellow-600">Inconsistent performance</p>
-                </div>
-            </div>
-            <div class="text-right">
-                <p class="font-semibold text-gray-900">3.2</p>
-                <div class="star-rating">
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star empty">★</span>
-                    <span class="star empty">★</span>
-                </div>
-            </div>
-        </div>
-    `;
+    `).join('');
 }
 
-function loadSampleSkillsTable() {
-    const tbody = document.getElementById('skills-table');
-    tbody.innerHTML = `
-        <tr class="hover:bg-gray-50">
-            <td rowspan="4" class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r">
-                <div class="text-blue-600">Product Pitch</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Explain benefits of insurance</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">4.1/5</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sarah C.</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">John S.</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="performance-badge excellent">Excellent</span>
-            </td>
-        </tr>
-        <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Explain product details</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">3.8/5</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Mike R.</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Emily J.</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="performance-badge good">Good</span>
-            </td>
-        </tr>
-        <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Answer product questions</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">3.7/5</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Lisa W.</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">John S.</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="performance-badge good">Good</span>
-            </td>
-        </tr>
-        <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Close with appointment/sale</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">4.0/5</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sarah C.</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Emily J.</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="performance-badge excellent">Excellent</span>
-            </td>
-        </tr>
-    `;
+function generateStars(score) {
+    const fullStars = Math.floor(score);
+    let stars = '';
+    for (let i = 0; i < 5; i++) {
+        stars += `<span class="star${i >= fullStars ? ' empty' : ''}">★</span>`;
+    }
+    return stars;
 }
 
 function createTrendsChart() {
@@ -612,57 +514,97 @@ function createTrendsChart() {
 
 async function generatePerformanceReport() {
     try {
-        const response = await fetch('/api/generate-report');
+        document.getElementById('analysis-status').textContent = 'Generating performance report...';
+        
+        const response = await fetch('/api/generate-performance-report');
         const result = await response.json();
         
         if (result.status === 'success') {
             alert(`Performance Report generated successfully: ${result.filename}`);
+            document.getElementById('analysis-status').textContent = 'Report generated successfully';
         } else {
             alert(`Error: ${result.error}`);
+            document.getElementById('analysis-status').textContent = `Report error: ${result.error}`;
         }
     } catch (error) {
         alert('Error generating report: ' + error.message);
+        document.getElementById('analysis-status').textContent = `Report error: ${error.message}`;
     }
 }
 
 async function refreshInsights() {
-    location.reload();
+    try {
+        document.getElementById('analysis-status').textContent = 'Running AI analysis - this may take 30-60 seconds...';
+        document.getElementById('analyzer-status').textContent = '🔄 Analyzing';
+        
+        const response = await fetch('/api/refresh-ai-insights', { method: 'POST' });
+        const result = await response.json();
+        
+        if (result.error) {
+            document.getElementById('analysis-status').textContent = `Error: ${result.error}`;
+            document.getElementById('analyzer-status').textContent = '❌ Error';
+            alert(`Error refreshing insights: ${result.error}`);
+        } else {
+            document.getElementById('analysis-status').textContent = 'AI analysis complete - reloading dashboard...';
+            document.getElementById('analyzer-status').textContent = '✅ Complete';
+            
+            // Reload the page to show fresh AI analysis
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        }
+        
+    } catch (error) {
+        document.getElementById('analysis-status').textContent = `Error: ${error.message}`;
+        document.getElementById('analyzer-status').textContent = '❌ Failed';
+        alert('Error refreshing insights: ' + error.message);
+    }
 }
 
 async function viewTrainingRecommendations() {
     const modal = document.getElementById('trainingModal');
     const content = document.getElementById('training-content');
     
-    // Sample recommendations - will come from AI analysis
-    content.innerHTML = `
-        <div class="space-y-4">
-            <div class="border-l-4 border-red-400 pl-4">
-                <h4 class="font-semibold text-gray-900">Priority: Objection Handling Training</h4>
-                <p class="text-sm text-gray-600 mt-1">60% of agents score below 3.5/5 in objection handling. Recommend focused workshop on defusing customer concerns.</p>
-                <div class="mt-2">
-                    <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">High Priority</span>
-                </div>
-            </div>
-            
-            <div class="border-l-4 border-yellow-400 pl-4">
-                <h4 class="font-semibold text-gray-900">Focus Area: Active Listening Skills</h4>
-                <p class="text-sm text-gray-600 mt-1">Agents John S. and Emily J. would benefit from active listening coaching to improve rapport building.</p>
-                <div class="mt-2">
-                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Medium Priority</span>
-                </div>
-            </div>
-            
-            <div class="border-l-4 border-green-400 pl-4">
-                <h4 class="font-semibold text-gray-900">Strength: Product Knowledge</h4>
-                <p class="text-sm text-gray-600 mt-1">Team excels at explaining insurance benefits. Consider having top performers mentor others.</p>
-                <div class="mt-2">
-                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Leverage Strength</span>
-                </div>
-            </div>
-        </div>
-    `;
-    
     modal.classList.remove('hidden');
+    
+    try {
+        const response = await fetch('/api/training-recommendations');
+        const data = await response.json();
+        
+        if (data.error) {
+            content.innerHTML = `<p class="text-red-600">Error: ${data.error}</p>`;
+            return;
+        }
+        
+        content.innerHTML = `
+            <div class="space-y-4">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <p class="text-sm text-blue-700">Analysis based on ${data.total_analyzed} conversations</p>
+                </div>
+                ${data.recommendations.map(rec => `
+                    <div class="border-l-4 border-${getPriorityColor(rec.priority)}-400 pl-4">
+                        <h4 class="font-semibold text-gray-900">${rec.title}</h4>
+                        <p class="text-sm text-gray-600 mt-1">${rec.description}</p>
+                        <div class="mt-2">
+                            <span class="text-xs bg-${getPriorityColor(rec.priority)}-100 text-${getPriorityColor(rec.priority)}-800 px-2 py-1 rounded">${rec.priority.charAt(0).toUpperCase() + rec.priority.slice(1)} Priority</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+    } catch (error) {
+        content.innerHTML = `<p class="text-red-600">Error loading recommendations: ${error.message}</p>`;
+    }
+}
+
+function getPriorityColor(priority) {
+    const colors = {
+        'high': 'red',
+        'medium': 'yellow',
+        'leverage': 'green'
+    };
+    return colors[priority] || 'gray';
 }
 
 function closeTrainingModal() {
