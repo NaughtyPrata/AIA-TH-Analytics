@@ -1,21 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}AIA Analytics Dashboard{% endblock %}
+{% block title %}AIA Analytics - Agent Performance Dashboard{% endblock %}
 
-{% block header %}Dashboard Overview{% endblock %}
+{% block header %}Agent Performance Overview{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Overview Cards -->
+    <!-- Performance Overview Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
                 <div class="p-2 bg-blue-100 rounded-md">
-                    <i class="lni lni-comments text-blue-600 text-xl"></i>
+                    <i class="lni lni-users text-blue-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-sm font-medium text-gray-500">Total Conversations</h3>
-                    <p class="text-2xl font-semibold text-gray-900" id="total-conversations">-</p>
+                    <h3 class="text-sm font-medium text-gray-500">Active Agents</h3>
+                    <p class="text-2xl font-semibold text-gray-900" id="total-agents">-</p>
+                    <p class="text-xs text-gray-500">Practicing this week</p>
                 </div>
             </div>
         </div>
@@ -23,11 +24,34 @@
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
                 <div class="p-2 bg-green-100 rounded-md">
-                    <i class="lni lni-bubble text-green-600 text-xl"></i>
+                    <i class="lni lni-comments text-green-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-sm font-medium text-gray-500">Total Messages</h3>
-                    <p class="text-2xl font-semibold text-gray-900" id="total-messages">-</p>
+                    <h3 class="text-sm font-medium text-gray-500">Practice Sessions</h3>
+                    <p class="text-2xl font-semibold text-gray-900" id="total-sessions">-</p>
+                    <p class="text-xs text-gray-500">Completed this month</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-md">
+                    <i class="lni lni-star text-yellow-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-gray-500">Average Performance</h3>
+                    <div class="flex items-center">
+                        <p class="text-2xl font-semibold text-gray-900 mr-2" id="avg-performance">-</p>
+                        <div class="star-rating" id="avg-performance-stars">
+                            <span class="star empty">★</span>
+                            <span class="star empty">★</span>
+                            <span class="star empty">★</span>
+                            <span class="star empty">★</span>
+                            <span class="star empty">★</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500">Out of 5.0</p>
                 </div>
             </div>
         </div>
@@ -35,149 +59,223 @@
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
                 <div class="p-2 bg-purple-100 rounded-md">
-                    <i class="lni lni-users text-purple-600 text-xl"></i>
+                    <i class="lni lni-bulb text-purple-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-sm font-medium text-gray-500">Active Agents</h3>
-                    <p class="text-2xl font-semibold text-gray-900" id="unique-agents">-</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-2 bg-red-100 rounded-md">
-                    <i class="lni lni-stats-up text-red-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <h3 class="text-sm font-medium text-gray-500">AI Insights</h3>
-                    <p class="text-2xl font-semibold text-gray-900" id="ai-insights-count">-</p>
+                    <h3 class="text-sm font-medium text-gray-500">Improvement Rate</h3>
+                    <p class="text-2xl font-semibold text-gray-900" id="improvement-rate">-</p>
+                    <p class="text-xs text-gray-500">vs last month</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- AI Insights Section -->
+    <!-- Skill Category Performance -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Sentiment Analysis -->
+        <!-- Skill Categories Overview -->
         <div class="bg-white rounded-lg shadow">
             <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">AI Sentiment Analysis</h3>
-                <p class="text-sm text-gray-500">Customer sentiment trends from recent conversations</p>
+                <h3 class="text-lg font-medium text-gray-900">Skill Category Performance</h3>
+                <p class="text-sm text-gray-500">Average scores across all agents</p>
             </div>
             <div class="p-6">
-                <canvas id="sentimentChart" width="400" height="200"></canvas>
+                <div class="space-y-6" id="skill-categories">
+                    <!-- Product Pitch -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Product Pitch</span>
+                                <div class="flex items-center">
+                                    <span class="text-lg font-semibold text-gray-900 mr-2" id="product-pitch-score">-</span>
+                                    <div class="star-rating" id="product-pitch-stars">
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" id="product-pitch-bar" style="width: 0%"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <span class="performance-badge" id="product-pitch-badge">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Objection Handling -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Objection Handling</span>
+                                <div class="flex items-center">
+                                    <span class="text-lg font-semibold text-gray-900 mr-2" id="objection-score">-</span>
+                                    <div class="star-rating" id="objection-stars">
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-yellow-500 h-2 rounded-full" id="objection-bar" style="width: 0%"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <span class="performance-badge" id="objection-badge">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Communication Skills -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Communication Skills</span>
+                                <div class="flex items-center">
+                                    <span class="text-lg font-semibold text-gray-900 mr-2" id="communication-score">-</span>
+                                    <div class="star-rating" id="communication-stars">
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                        <span class="star empty">★</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" id="communication-bar" style="width: 0%"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <span class="performance-badge" id="communication-badge">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Recent AI Insights -->
+        <!-- Performance Trends Chart -->
         <div class="bg-white rounded-lg shadow">
             <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Recent AI Insights</h3>
-                <p class="text-sm text-gray-500">Latest conversation analysis</p>
+                <h3 class="text-lg font-medium text-gray-900">Performance Trends</h3>
+                <p class="text-sm text-gray-500">Weekly progress across skill categories</p>
             </div>
             <div class="p-6">
-                <div id="recent-insights" class="space-y-4">
-                    <!-- Dynamic content will be loaded here -->
-                </div>
+                <canvas id="trendsChart" width="400" height="200"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- Conversation Performance -->
+    <!-- Agent Performance and AI Actions -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Issue Resolution -->
+        <!-- Top Performers -->
         <div class="bg-white rounded-lg shadow">
             <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Issue Resolution</h3>
-                <p class="text-sm text-gray-500">AI-analyzed resolution rates</p>
+                <h3 class="text-lg font-medium text-gray-900">Top Performers</h3>
+                <p class="text-sm text-gray-500">Highest overall scores this week</p>
             </div>
             <div class="p-6">
-                <canvas id="resolutionChart" width="300" height="200"></canvas>
-            </div>
-        </div>
-
-        <!-- Product Interest -->
-        <div class="bg-white rounded-lg shadow">
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Product Interest</h3>
-                <p class="text-sm text-gray-500">Most discussed AIA products</p>
-            </div>
-            <div class="p-6">
-                <div id="product-interest" class="space-y-3">
-                    <!-- Dynamic content will be loaded here -->
+                <div class="space-y-4" id="top-performers">
+                    <div class="text-center text-gray-500 py-4">
+                        <i class="lni lni-spinner-arrow text-2xl animate-spin"></i>
+                        <p class="mt-2">Loading performance data...</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- AI Actions -->
+        <!-- Needs Attention -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Needs Attention</h3>
+                <p class="text-sm text-gray-500">Agents requiring additional support</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4" id="needs-attention">
+                    <div class="text-center text-gray-500 py-4">
+                        <i class="lni lni-spinner-arrow text-2xl animate-spin"></i>
+                        <p class="mt-2">Analyzing performance gaps...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Actions (Kept from original) -->
         <div class="bg-white rounded-lg shadow">
             <div class="p-6 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">AI Actions</h3>
                 <p class="text-sm text-gray-500">Generate insights and reports</p>
             </div>
             <div class="p-6 space-y-3">
-                <button onclick="generateReport()" class="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                <button onclick="generatePerformanceReport()" class="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
                     <i class="lni lni-download mr-2"></i>
-                    Generate AI Report
+                    Generate Performance Report
                 </button>
                 <button onclick="refreshInsights()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="lni lni-reload mr-2"></i>
                     Refresh AI Insights
                 </button>
-                <button onclick="viewProductOpportunities()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                    <i class="lni lni-bulb mr-2"></i>
-                    Product Opportunities
+                <button onclick="viewTrainingRecommendations()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="lni lni-graduation mr-2"></i>
+                    Training Recommendations
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Recent Conversations Table -->
+    <!-- Detailed Skills Breakdown -->
     <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200">
             <div class="flex justify-between items-center">
                 <div>
-                    <h3 class="text-lg font-medium text-gray-900">Recent Conversations</h3>
-                    <p class="text-sm text-gray-500">Latest customer interactions with AI analysis</p>
+                    <h3 class="text-lg font-medium text-gray-900">Detailed Skills Analysis</h3>
+                    <p class="text-sm text-gray-500">Individual metric performance across all agents</p>
                 </div>
-                <a href="/conversations" class="text-red-600 hover:text-red-700 text-sm font-medium">
-                    View All →
-                </a>
+                <button class="text-red-600 hover:text-red-700 text-sm font-medium">
+                    View Full Analysis →
+                </button>
             </div>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversation ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Messages</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AI Sentiment</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issues</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Skill Category</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specific Metric</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average Score</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Top Performer</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Needs Improvement</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="conversations-table" class="bg-white divide-y divide-gray-200">
-                    <!-- Dynamic content will be loaded here -->
+                <tbody id="skills-table" class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <i class="lni lni-spinner-arrow text-2xl animate-spin"></i>
+                            <p class="mt-2">Loading detailed skills analysis...</p>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Product Opportunities Modal -->
-<div id="opportunitiesModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+<!-- Training Recommendations Modal -->
+<div id="trainingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
     <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium text-gray-900">AI Product Opportunities</h3>
-                <button onclick="closeOpportunitiesModal()" class="text-gray-400 hover:text-gray-600">
+                <h3 class="text-lg font-medium text-gray-900">AI Training Recommendations</h3>
+                <button onclick="closeTrainingModal()" class="text-gray-400 hover:text-gray-600">
                     <i class="lni lni-close text-xl"></i>
                 </button>
             </div>
-            <div id="opportunities-content" class="max-h-96 overflow-y-auto">
+            <div id="training-content" class="max-h-96 overflow-y-auto">
                 <!-- Dynamic content will be loaded here -->
             </div>
         </div>
@@ -187,113 +285,308 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+    .star-rating {
+        display: inline-flex;
+        gap: 2px;
+    }
+    .star {
+        color: #FCD34D;
+        font-size: 1rem;
+    }
+    .star.empty {
+        color: #E5E7EB;
+    }
+    .performance-badge {
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .excellent { background: #D1FAE5; color: #065F46; }
+    .good { background: #DBEAFE; color: #1E40AF; }
+    .needs-improvement { background: #FEF3C7; color: #92400E; }
+    .poor { background: #FEE2E2; color: #991B1B; }
+</style>
+
 <script>
-let sentimentChart, resolutionChart;
+let trendsChart;
 
 // Load dashboard data
-async function loadDashboardData() {
+async function loadPerformanceData() {
     try {
-        const response = await fetch('/api/dashboard-overview');
+        const response = await fetch('/api/agent-performance-overview');
         const data = await response.json();
         
-        // Update overview cards
-        document.getElementById('total-conversations').textContent = data.total_conversations || 0;
-        document.getElementById('total-messages').textContent = data.total_messages || 0;
-        document.getElementById('unique-agents').textContent = data.unique_agents || 0;
-        document.getElementById('ai-insights-count').textContent = data.ai_insights?.total_analyzed || 0;
+        // Update overview cards with sample data for now
+        document.getElementById('total-agents').textContent = data.total_agents || 12;
+        document.getElementById('total-sessions').textContent = data.total_sessions || 247;
+        document.getElementById('avg-performance').textContent = data.avg_performance || '3.6';
+        document.getElementById('improvement-rate').textContent = data.improvement_rate || '+12%';
         
-        // Load AI insights
-        if (data.ai_insights && data.ai_insights.sample_insights) {
-            displayRecentInsights(data.ai_insights.sample_insights);
-            createSentimentChart(data.ai_insights.sample_insights);
-            createResolutionChart(data.ai_insights.sample_insights);
-            displayProductInterest(data.ai_insights.sample_insights);
+        // Update star ratings
+        updateStarRating('avg-performance-stars', data.avg_performance || 3.6);
+        
+        // Update skill categories with sample data
+        updateSkillCategory('product-pitch', data.product_pitch || { score: 3.9, status: 'good' });
+        updateSkillCategory('objection', data.objection_handling || { score: 3.1, status: 'needs-improvement' });
+        updateSkillCategory('communication', data.communication || { score: 3.6, status: 'good' });
+        
+        // Load other sections
+        loadTopPerformers(data.top_performers);
+        loadNeedsAttention(data.needs_attention);
+        loadSkillsTable(data.detailed_skills);
+        
+    } catch (error) {
+        console.error('Error loading performance data:', error);
+        // Show sample data as fallback
+        loadSampleData();
+    }
+}
+
+function loadSampleData() {
+    // Sample data for demonstration
+    document.getElementById('total-agents').textContent = '12';
+    document.getElementById('total-sessions').textContent = '247';
+    document.getElementById('avg-performance').textContent = '3.6';
+    document.getElementById('improvement-rate').textContent = '+12%';
+    
+    updateStarRating('avg-performance-stars', 3.6);
+    updateSkillCategory('product-pitch', { score: 3.9, status: 'good' });
+    updateSkillCategory('objection', { score: 3.1, status: 'needs-improvement' });
+    updateSkillCategory('communication', { score: 3.6, status: 'good' });
+    
+    loadSampleTopPerformers();
+    loadSampleNeedsAttention();
+    loadSampleSkillsTable();
+}
+
+function updateStarRating(elementId, score) {
+    const container = document.getElementById(elementId);
+    const stars = container.querySelectorAll('.star');
+    const fullStars = Math.floor(score);
+    
+    stars.forEach((star, index) => {
+        if (index < fullStars) {
+            star.classList.remove('empty');
+        } else {
+            star.classList.add('empty');
         }
-        
-    } catch (error) {
-        console.error('Error loading dashboard data:', error);
-    }
+    });
 }
 
-// Load conversations table
-async function loadConversationsTable() {
-    try {
-        const response = await fetch('/api/conversations');
-        const conversations = await response.json();
-        
-        const tbody = document.getElementById('conversations-table');
-        tbody.innerHTML = conversations.slice(0, 10).map(conv => `
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ${conv['Conversation ID']}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${new Date(conv['Start Time']).toLocaleDateString()}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${conv['Total Messages'] || 0}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 py-1 text-xs font-medium rounded-full ${getSentimentColor(conv.AI_Sentiment)}">
-                        ${conv.AI_Sentiment || 'unknown'}
-                    </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${conv.AI_Issues_Count || 0}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(conv.AI_Status)}">
-                        ${conv.AI_Status || 'unknown'}
-                    </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <a href="/conversation/${conv['Conversation ID']}" class="text-red-600 hover:text-red-700">
-                        View Details
-                    </a>
-                </td>
-            </tr>
-        `).join('');
-        
-    } catch (error) {
-        console.error('Error loading conversations:', error);
-    }
+function updateSkillCategory(category, data) {
+    document.getElementById(`${category}-score`).textContent = data.score;
+    updateStarRating(`${category}-stars`, data.score);
+    
+    const percentage = (data.score / 5) * 100;
+    document.getElementById(`${category}-bar`).style.width = `${percentage}%`;
+    
+    const badge = document.getElementById(`${category}-badge`);
+    badge.textContent = getStatusText(data.status);
+    badge.className = `performance-badge ${data.status}`;
 }
 
-function displayRecentInsights(insights) {
-    const container = document.getElementById('recent-insights');
-    container.innerHTML = insights.slice(0, 5).map(insight => `
-        <div class="border-l-4 border-blue-400 pl-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-sm font-medium text-gray-900">${insight.conversation_id}</p>
-                    <p class="text-xs text-gray-500">${insight.customer_intent.substring(0, 80)}...</p>
+function getStatusText(status) {
+    const statusMap = {
+        'excellent': 'Excellent',
+        'good': 'Good Performance',
+        'needs-improvement': 'Needs Improvement',
+        'poor': 'Poor Performance'
+    };
+    return statusMap[status] || 'Unknown';
+}
+
+function loadSampleTopPerformers() {
+    const container = document.getElementById('top-performers');
+    container.innerHTML = `
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-yellow-600 font-semibold text-sm">1</span>
                 </div>
-                <span class="px-2 py-1 text-xs font-medium rounded-full ${getSentimentColor(insight.sentiment)}">
-                    ${insight.sentiment}
-                </span>
+                <div>
+                    <p class="font-medium text-gray-900">Sarah Chen</p>
+                    <p class="text-xs text-gray-500">12 sessions</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="font-semibold text-gray-900">4.3</p>
+                <div class="star-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                </div>
             </div>
         </div>
-    `).join('');
+        
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-gray-600 font-semibold text-sm">2</span>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">Mike Rodriguez</p>
+                    <p class="text-xs text-gray-500">15 sessions</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="font-semibold text-gray-900">4.1</p>
+                <div class="star-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star empty">★</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-gray-600 font-semibold text-sm">3</span>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">Lisa Wang</p>
+                    <p class="text-xs text-gray-500">9 sessions</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="font-semibold text-gray-900">3.9</p>
+                <div class="star-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star empty">★</span>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
-function createSentimentChart(insights) {
-    const ctx = document.getElementById('sentimentChart').getContext('2d');
+function loadSampleNeedsAttention() {
+    const container = document.getElementById('needs-attention');
+    container.innerHTML = `
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                    <i class="lni lni-warning text-red-600 text-sm"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">John Smith</p>
+                    <p class="text-xs text-red-500">Objection handling: 2.1/5</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="font-semibold text-gray-900">2.8</p>
+                <div class="star-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star empty">★</span>
+                    <span class="star empty">★</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                    <i class="lni lni-warning text-yellow-600 text-sm"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">Emily Johnson</p>
+                    <p class="text-xs text-yellow-600">Inconsistent performance</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="font-semibold text-gray-900">3.2</p>
+                <div class="star-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star empty">★</span>
+                    <span class="star empty">★</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function loadSampleSkillsTable() {
+    const tbody = document.getElementById('skills-table');
+    tbody.innerHTML = `
+        <tr class="hover:bg-gray-50">
+            <td rowspan="4" class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r">
+                <div class="text-blue-600">Product Pitch</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Explain benefits of insurance</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">4.1/5</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sarah C.</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">John S.</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="performance-badge excellent">Excellent</span>
+            </td>
+        </tr>
+        <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Explain product details</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">3.8/5</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Mike R.</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Emily J.</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="performance-badge good">Good</span>
+            </td>
+        </tr>
+        <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Answer product questions</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">3.7/5</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Lisa W.</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">John S.</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="performance-badge good">Good</span>
+            </td>
+        </tr>
+        <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Close with appointment/sale</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">4.0/5</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sarah C.</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Emily J.</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="performance-badge excellent">Excellent</span>
+            </td>
+        </tr>
+    `;
+}
+
+function createTrendsChart() {
+    const ctx = document.getElementById('trendsChart').getContext('2d');
     
-    const sentimentCounts = insights.reduce((acc, insight) => {
-        acc[insight.sentiment] = (acc[insight.sentiment] || 0) + 1;
-        return acc;
-    }, {});
-    
-    if (sentimentChart) sentimentChart.destroy();
-    
-    sentimentChart = new Chart(ctx, {
-        type: 'doughnut',
+    trendsChart = new Chart(ctx, {
+        type: 'line',
         data: {
-            labels: Object.keys(sentimentCounts),
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
             datasets: [{
-                data: Object.values(sentimentCounts),
-                backgroundColor: ['#10B981', '#F59E0B', '#EF4444', '#6B7280'],
-                borderWidth: 2
+                label: 'Product Pitch',
+                data: [3.5, 3.7, 3.8, 3.9],
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Objection Handling',
+                data: [2.8, 2.9, 3.0, 3.1],
+                borderColor: '#EF4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Communication',
+                data: [3.2, 3.4, 3.5, 3.6],
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.4
             }]
         },
         options: {
@@ -303,42 +596,11 @@ function createSentimentChart(insights) {
                 legend: {
                     position: 'bottom'
                 }
-            }
-        }
-    });
-}
-
-function createResolutionChart(insights) {
-    const ctx = document.getElementById('resolutionChart').getContext('2d');
-    
-    const resolutionCounts = insights.reduce((acc, insight) => {
-        acc[insight.resolution_status] = (acc[insight.resolution_status] || 0) + 1;
-        return acc;
-    }, {});
-    
-    if (resolutionChart) resolutionChart.destroy();
-    
-    resolutionChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(resolutionCounts),
-            datasets: [{
-                data: Object.values(resolutionCounts),
-                backgroundColor: '#DC2626',
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
             },
             scales: {
                 y: {
                     beginAtZero: true,
+                    max: 5,
                     ticks: {
                         stepSize: 1
                     }
@@ -348,54 +610,13 @@ function createResolutionChart(insights) {
     });
 }
 
-function displayProductInterest(insights) {
-    const container = document.getElementById('product-interest');
-    
-    // Count product mentions
-    const productCounts = {};
-    insights.forEach(insight => {
-        insight.product_interest.forEach(product => {
-            productCounts[product] = (productCounts[product] || 0) + 1;
-        });
-    });
-    
-    const sortedProducts = Object.entries(productCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 5);
-    
-    container.innerHTML = sortedProducts.map(([product, count]) => `
-        <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-700">${product}</span>
-            <span class="text-sm font-medium text-gray-900">${count}</span>
-        </div>
-    `).join('');
-}
-
-function getSentimentColor(sentiment) {
-    switch (sentiment) {
-        case 'positive': return 'bg-green-100 text-green-800';
-        case 'negative': return 'bg-red-100 text-red-800';
-        case 'neutral': return 'bg-yellow-100 text-yellow-800';
-        default: return 'bg-gray-100 text-gray-800';
-    }
-}
-
-function getStatusColor(status) {
-    switch (status) {
-        case 'resolved': return 'bg-green-100 text-green-800';
-        case 'partially_resolved': return 'bg-yellow-100 text-yellow-800';
-        case 'unresolved': return 'bg-red-100 text-red-800';
-        default: return 'bg-gray-100 text-gray-800';
-    }
-}
-
-async function generateReport() {
+async function generatePerformanceReport() {
     try {
         const response = await fetch('/api/generate-report');
         const result = await response.json();
         
         if (result.status === 'success') {
-            alert(`AI Report generated successfully: ${result.filename}`);
+            alert(`Performance Report generated successfully: ${result.filename}`);
         } else {
             alert(`Error: ${result.error}`);
         }
@@ -408,34 +629,50 @@ async function refreshInsights() {
     location.reload();
 }
 
-async function viewProductOpportunities() {
-    try {
-        const response = await fetch('/api/product-insights');
-        const data = await response.json();
-        
-        const modal = document.getElementById('opportunitiesModal');
-        const content = document.getElementById('opportunities-content');
-        
-        if (data.error) {
-            content.innerHTML = `<p class="text-red-600">Error: ${data.error}</p>`;
-        } else {
-            content.innerHTML = `<div class="prose max-w-none">${data.opportunities_analysis.replace(/\n/g, '<br>')}</div>`;
-        }
-        
-        modal.classList.remove('hidden');
-    } catch (error) {
-        console.error('Error loading product opportunities:', error);
-    }
+async function viewTrainingRecommendations() {
+    const modal = document.getElementById('trainingModal');
+    const content = document.getElementById('training-content');
+    
+    // Sample recommendations - will come from AI analysis
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="border-l-4 border-red-400 pl-4">
+                <h4 class="font-semibold text-gray-900">Priority: Objection Handling Training</h4>
+                <p class="text-sm text-gray-600 mt-1">60% of agents score below 3.5/5 in objection handling. Recommend focused workshop on defusing customer concerns.</p>
+                <div class="mt-2">
+                    <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">High Priority</span>
+                </div>
+            </div>
+            
+            <div class="border-l-4 border-yellow-400 pl-4">
+                <h4 class="font-semibold text-gray-900">Focus Area: Active Listening Skills</h4>
+                <p class="text-sm text-gray-600 mt-1">Agents John S. and Emily J. would benefit from active listening coaching to improve rapport building.</p>
+                <div class="mt-2">
+                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Medium Priority</span>
+                </div>
+            </div>
+            
+            <div class="border-l-4 border-green-400 pl-4">
+                <h4 class="font-semibold text-gray-900">Strength: Product Knowledge</h4>
+                <p class="text-sm text-gray-600 mt-1">Team excels at explaining insurance benefits. Consider having top performers mentor others.</p>
+                <div class="mt-2">
+                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Leverage Strength</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
 }
 
-function closeOpportunitiesModal() {
-    document.getElementById('opportunitiesModal').classList.add('hidden');
+function closeTrainingModal() {
+    document.getElementById('trainingModal').classList.add('hidden');
 }
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    loadDashboardData();
-    loadConversationsTable();
+    createTrendsChart();
+    loadPerformanceData();
 });
 </script>
 {% endblock %}
