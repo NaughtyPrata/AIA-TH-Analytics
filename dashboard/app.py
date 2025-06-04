@@ -30,21 +30,174 @@ except Exception as e:
     print(f"⚠️ AI Analyzer initialization failed: {e}")
     ai_analyzer = None
 
-def get_total_conversations_count():
-    """Get total number of unique conversations without loading all data"""
-    try:
-        if 'total_conversations' not in cache:
-            df = pd.read_csv(LOG_FILE_PATH, usecols=['Conversation ID'])
-            df = df[df['Conversation ID'].notna()]
-            total_count = df['Conversation ID'].nunique()
-            cache['total_conversations'] = total_count
-        return cache['total_conversations']
-    except Exception as e:
-        print(f"Error counting conversations: {e}")
-        return 0
+def analyze_agent_performance(conversation_text, conversation_id):
+    """Analyze agent performance based on conversation content"""
+    
+    # Extract agent responses for analysis
+    lines = conversation_text.split('\n')
+    agent_responses = [line.split(': ', 1)[1] for line in lines if line.startswith('Agent: ')]
+    customer_prompts = [line.split(': ', 1)[1] for line in lines if line.startswith('Customer: ')]
+    
+    # Initialize performance metrics
+    performance = {
+        'product_pitch': {
+            'explain_benefits': {'score': 0, 'explanation': 'Not demonstrated'},
+            'explain_details': {'score': 0, 'explanation': 'Not demonstrated'},  
+            'answer_questions': {'score': 0, 'explanation': 'Not demonstrated'},
+            'close_conversation': {'score': 0, 'explanation': 'Not demonstrated'}
+        },
+        'objection_handling': {
+            'listening': {'score': 0, 'explanation': 'Not demonstrated'},
+            'acknowledging': {'score': 0, 'explanation': 'Not demonstrated'},
+            'defusing': {'score': 0, 'explanation': 'Not demonstrated'},
+            'refocusing': {'score': 0, 'explanation': 'Not demonstrated'}
+        },
+        'communication_skills': {
+            'small_talk': {'score': 0, 'explanation': 'Not demonstrated'},
+            'content_organization': {'score': 0, 'explanation': 'Not demonstrated'},
+            'building_rapport': {'score': 0, 'explanation': 'Not demonstrated'},
+            'relevant_examples': {'score': 0, 'explanation': 'Not demonstrated'},
+            'active_listening': {'score': 0, 'explanation': 'Not demonstrated'},
+            'closing': {'score': 0, 'explanation': 'Not demonstrated'}
+        }
+    }
+    
+    # Analyze communication skills - Small talk
+    if any(keyword in ' '.join(agent_responses).lower() for keyword in ['football', 'match', 'arsenal', 'game']):
+        performance['communication_skills']['small_talk'] = {
+            'score': 4, 
+            'explanation': 'Engaged well in football discussion, showed personality'
+        }
+        performance['communication_skills']['building_rapport'] = {
+            'score': 4,
+            'explanation': 'Good rapport building through shared interests'
+        }
+    
+    # Check for insurance-related content
+    insurance_keywords = ['insurance', 'policy', 'coverage', 'premium', 'benefit', 'life insurance', 'protection']
+    insurance_discussion = any(keyword in ' '.join(agent_responses).lower() for keyword in insurance_keywords)
+    
+    if insurance_discussion:
+        performance['product_pitch']['explain_benefits']['score'] = 3
+        performance['product_pitch']['explain_benefits']['explanation'] = 'Mentioned insurance products'
+        performance['communication_skills']['content_organization']['score'] = 3
+        performance['communication_skills']['content_organization']['explanation'] = 'Transitioned to business discussion'
+    
+    # Analyze response quality
+    total_agent_words = sum(len(response.split()) for response in agent_responses)
+    avg_response_length = total_agent_words / len(agent_responses) if agent_responses else 0
+    
+    if avg_response_length > 10:
+        performance['communication_skills']['active_listening']['score'] = 3
+        performance['communication_skills']['active_listening']['explanation'] = 'Provided detailed responses'
+    elif avg_response_length < 3:
+        performance['communication_skills']['active_listening']['score'] = 2
+        performance['communication_skills']['active_listening']['explanation'] = 'Very brief responses, may indicate disengagement'
+    
+    # Check for professional language and courtesy
+    if any(word in ' '.join(agent_responses).lower() for word in ['please', 'thank', 'appreciate']):
+        performance['communication_skills']['building_rapport']['score'] = max(
+            performance['communication_skills']['building_rapport']['score'], 3
+        )
+    
+    return performance
 
-def load_paginated_conversations(page=1, per_page=ITEMS_PER_PAGE, search=None, sentiment_filter=None, status_filter=None):
-    """Load conversations with pagination and filtering"""
+def get_session_summary(conversation_id, conversation_data):
+    """Generate session summary for dashboard display"""
+    
+    # Calculate basic metrics
+    agent_messages = len(conversation_data[conversation_data['Message Role'] == 'Agent'])
+    customer_messages = len(conversation_data[conversation_data['Message Role'] == 'Customer'])
+    total_messages = len(conversation_data)
+    
+    # Analyze conversation content
+    conversation_text = ""
+    for _, row in conversation_data.iterrows():
+        role = row['Message Role']
+        text = row['Message Text']
+        conversation_text += f"{role}: {text}\n"
+    
+    # Get AI performance analysis
+    performance = analyze_agent_performance(conversation_text, conversation_id)
+    
+    # Calculate category averages
+    product_pitch_avg = np.mean([
+        performance['product_pitch']['explain_benefits']['score'],
+        performance['product_pitch']['explain_details']['score'],
+        performance['product_pitch']['answer_questions']['score'],
+        performance['product_pitch']['close_conversation']['score']
+    ])
+    
+    objection_handling_avg = np.mean([
+        performance['objection_handling']['listening']['score'],
+        performance['objection_handling']['acknowledging']['score'],
+        performance['objection_handling']['defusing']['score'],
+        performance['objection_handling']['refocusing']['score']
+    ])
+    
+    communication_skills_avg = np.mean([
+        performance['communication_skills']['small_talk']['score'],
+        performance['communication_skills']['content_organization']['score'],
+        performance['communication_skills']['building_rapport']['score'],
+        performance['communication_skills']['relevant_examples']['score'],
+        performance['communication_skills']['active_listening']['score'],
+        performance['communication_skills']['closing']['score']
+    ])
+    
+    overall_score = np.mean([product_pitch_avg, objection_handling_avg, communication_skills_avg])
+    
+    # Determine strengths and improvement areas
+    category_scores = {
+        'Product Pitch': product_pitch_avg,
+        'Objection Handling': objection_handling_avg,
+        'Communication Skills': communication_skills_avg
+    }
+    
+    strengths = [k for k, v in category_scores.items() if v >= 3.5]
+    improvement_areas = [k for k, v in category_scores.items() if v < 3.0]
+    
+    # Determine scenario type based on conversation content
+    scenario_type = "General Practice"
+    if "insurance" in conversation_text.lower():
+        scenario_type = "Product Pitch"
+    if any(word in conversation_text.lower() for word in ["objection", "expensive", "costly", "cheap"]):
+        scenario_type = "Objection Handling"
+    
+    # Generate AI feedback
+    if overall_score >= 4.0:
+        ai_feedback = "Excellent performance! Strong across all areas."
+        practice_status = "Completed - Excellent"
+    elif overall_score >= 3.0:
+        ai_feedback = f"Good foundation. Focus on: {', '.join(improvement_areas) if improvement_areas else 'maintaining consistency'}"
+        practice_status = "Completed - Good"
+    elif overall_score >= 2.0:
+        ai_feedback = f"Needs improvement in: {', '.join(improvement_areas)}. Consider additional practice."
+        practice_status = "Needs Review"
+    else:
+        ai_feedback = "Significant improvement needed. Recommend manager review."
+        practice_status = "Requires Attention"
+    
+    return {
+        'session_id': conversation_id,
+        'agent_id': conversation_data['Agent ID'].iloc[0] if 'Agent ID' in conversation_data.columns else 'Unknown',
+        'practice_date': conversation_data['Created At'].iloc[0] if 'Created At' in conversation_data.columns else None,
+        'total_messages': total_messages,
+        'agent_messages': agent_messages,
+        'customer_messages': customer_messages,
+        'scenario_type': scenario_type,
+        'performance_score': round(overall_score, 1),
+        'product_pitch_score': round(product_pitch_avg, 1),
+        'objection_handling_score': round(objection_handling_avg, 1),
+        'communication_skills_score': round(communication_skills_avg, 1),
+        'strengths': strengths,
+        'improvement_areas': improvement_areas,
+        'ai_feedback': ai_feedback,
+        'practice_status': practice_status,
+        'detailed_performance': performance
+    }
+
+def load_paginated_sessions(page=1, per_page=ITEMS_PER_PAGE, search=None, performance_filter=None, status_filter=None):
+    """Load practice sessions with pagination and filtering"""
     try:
         # Load full dataset
         df = pd.read_csv(LOG_FILE_PATH)
@@ -58,75 +211,52 @@ def load_paginated_conversations(page=1, per_page=ITEMS_PER_PAGE, search=None, s
         # Convert date column
         df['Created At'] = pd.to_datetime(df['Created At'], format='%Y-%m-%d %H:%M:%S (GMT+7)', errors='coerce')
         
-        # Group by conversation to get summary stats
-        grouped = df.groupby('Conversation ID').agg({
-            'Created At': ['min', 'max'],
-            'Message Role': 'count',
-            'Agent ID': 'first'
-        }).reset_index()
+        # Group by conversation to get session data
+        session_summaries = []
+        unique_conversations = df['Conversation ID'].unique()
         
-        # Flatten column names
-        grouped.columns = ['Conversation ID', 'Start Time', 'End Time', 'Total Messages', 'Agent ID']
-        
-        # Calculate duration and message breakdown
-        conversation_stats = []
-        for _, row in grouped.iterrows():
-            conv_id = row['Conversation ID']
+        for conv_id in unique_conversations:
             conv_data = df[df['Conversation ID'] == conv_id]
-            
-            customer_messages = len(conv_data[conv_data['Message Role'] == 'Customer'])
-            agent_messages = len(conv_data[conv_data['Message Role'] == 'Agent'])
-            
-            conv_stats = {
-                'Conversation ID': conv_id,
-                'Start Time': row['Start Time'],
-                'End Time': row['End Time'],
-                'Total Messages': row['Total Messages'],
-                'Customer Messages': customer_messages,
-                'Agent Messages': agent_messages,
-                'Agent ID': row['Agent ID'],
-                # Placeholder for AI analysis - will be loaded on demand
-                'AI_Sentiment': 'pending',
-                'AI_Intent': 'Click to analyze',
-                'AI_Issues_Count': 0,
-                'AI_Status': 'pending'
-            }
-            conversation_stats.append(conv_stats)
+            session_summary = get_session_summary(conv_id, conv_data)
+            session_summaries.append(session_summary)
         
-        # Sort by start time (most recent first)
-        conversation_stats.sort(key=lambda x: x['Start Time'] if pd.notna(x['Start Time']) else datetime.min, reverse=True)
+        # Sort by date (most recent first)
+        session_summaries.sort(key=lambda x: x['practice_date'] if pd.notna(x['practice_date']) else datetime.min, reverse=True)
         
         # Apply filters
         if search:
             search_lower = search.lower()
-            conversation_stats = [
-                conv for conv in conversation_stats 
-                if search_lower in conv['Conversation ID'].lower() or 
-                   search_lower in conv.get('AI_Intent', '').lower()
+            session_summaries = [
+                session for session in session_summaries 
+                if search_lower in session['session_id'].lower() or 
+                   search_lower in session['agent_id'].lower() or
+                   search_lower in session['scenario_type'].lower()
             ]
         
-        if sentiment_filter:
-            conversation_stats = [
-                conv for conv in conversation_stats 
-                if conv.get('AI_Sentiment') == sentiment_filter
-            ]
+        if performance_filter:
+            if performance_filter == 'excellent':
+                session_summaries = [s for s in session_summaries if s['performance_score'] >= 4.0]
+            elif performance_filter == 'good':
+                session_summaries = [s for s in session_summaries if 3.0 <= s['performance_score'] < 4.0]
+            elif performance_filter == 'needs_improvement':
+                session_summaries = [s for s in session_summaries if s['performance_score'] < 3.0]
         
         if status_filter:
-            conversation_stats = [
-                conv for conv in conversation_stats 
-                if conv.get('AI_Status') == status_filter
+            session_summaries = [
+                session for session in session_summaries 
+                if session['practice_status'].lower().replace(' ', '_').replace('-', '_') == status_filter.lower()
             ]
         
         # Calculate pagination
-        total_items = len(conversation_stats)
+        total_items = len(session_summaries)
         total_pages = math.ceil(total_items / per_page)
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
         
-        paginated_data = conversation_stats[start_idx:end_idx]
+        paginated_data = session_summaries[start_idx:end_idx]
         
         return {
-            'conversations': paginated_data,
+            'sessions': paginated_data,
             'pagination': {
                 'current_page': page,
                 'per_page': per_page,
@@ -138,9 +268,9 @@ def load_paginated_conversations(page=1, per_page=ITEMS_PER_PAGE, search=None, s
         }
         
     except Exception as e:
-        print(f"Error loading paginated conversations: {e}")
+        print(f"Error loading paginated sessions: {e}")
         return {
-            'conversations': [],
+            'sessions': [],
             'pagination': {
                 'current_page': 1,
                 'per_page': per_page,
@@ -151,128 +281,39 @@ def load_paginated_conversations(page=1, per_page=ITEMS_PER_PAGE, search=None, s
             }
         }
 
-def analyze_conversation_on_demand(conversation_id):
-    """Analyze a single conversation on demand using AI"""
-    if not ai_analyzer:
-        return {
-            'AI_Sentiment': 'unavailable',
-            'AI_Intent': 'AI analyzer not available',
-            'AI_Issues_Count': 0,
-            'AI_Status': 'unavailable'
-        }
-    
-    try:
-        # Check cache first
-        cache_key = f"analysis_{conversation_id}"
-        if cache_key in cache:
-            return cache[cache_key]
-        
-        # Load conversation data directly
-        df = pd.read_csv(LOG_FILE_PATH)
-        df.columns = df.columns.str.strip()
-        
-        # Clean data
-        df = df[df['Message Role'] != 'N/A']
-        df = df[df['Message Text'].notna()]
-        df = df[df['Message Text'] != 'No transcript available']
-        
-        conv_data = df[df['Conversation ID'] == conversation_id]
-        
-        if conv_data.empty:
-            return {
-                'AI_Sentiment': 'error',
-                'AI_Intent': 'Conversation not found',
-                'AI_Issues_Count': 0,
-                'AI_Status': 'error'
-            }
-        
-        # Prepare conversation text for analysis
-        conversation_text = ""
-        for _, row in conv_data.iterrows():
-            role = row['Message Role']
-            text = row['Message Text']
-            conversation_text += f"{role}: {text}\n"
-        
-        # Create a simple analysis without using the AI analyzer's analyze_conversation method
-        # since it seems to have issues with the data format
-        
-        # For now, let's do a basic sentiment analysis
-        customer_messages = conv_data[conv_data['Message Role'] == 'Customer']['Message Text'].tolist()
-        
-        # Simple rule-based analysis
-        positive_words = ['thank', 'good', 'great', 'excellent', 'satisfied', 'happy', 'please']
-        negative_words = ['problem', 'issue', 'bad', 'terrible', 'angry', 'frustrated', 'complaint']
-        
-        sentiment_score = 0
-        for msg in customer_messages:
-            if isinstance(msg, str):
-                msg_lower = msg.lower()
-                sentiment_score += sum(1 for word in positive_words if word in msg_lower)
-                sentiment_score -= sum(1 for word in negative_words if word in msg_lower)
-        
-        if sentiment_score > 0:
-            sentiment = 'positive'
-        elif sentiment_score < 0:
-            sentiment = 'negative'
-        else:
-            sentiment = 'neutral'
-        
-        # Basic intent detection
-        intent = "Customer inquiry about insurance services"
-        if any('claim' in str(msg).lower() for msg in customer_messages if isinstance(msg, str)):
-            intent = "Customer inquiring about insurance claims"
-        elif any('policy' in str(msg).lower() for msg in customer_messages if isinstance(msg, str)):
-            intent = "Customer asking about policy details"
-        
-        analysis_result = {
-            'AI_Sentiment': sentiment,
-            'AI_Intent': intent,
-            'AI_Issues_Count': max(0, -sentiment_score),  # Use negative sentiment as issue count
-            'AI_Status': 'resolved' if sentiment_score >= 0 else 'unresolved'
-        }
-        
-        # Cache the result
-        cache[cache_key] = analysis_result
-        return analysis_result
-        
-    except Exception as e:
-        print(f"Error analyzing conversation {conversation_id}: {e}")
-        return {
-            'AI_Sentiment': 'error',
-            'AI_Intent': f'Analysis failed: {str(e)[:50]}',
-            'AI_Issues_Count': 0,
-            'AI_Status': 'error'
-        }
-
 # Routes
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/sessions')
+def sessions():
+    return render_template('sessions.html')
 
 @app.route('/conversations')
 def conversations():
     return render_template('conversations_lazy.html')
 
 # API endpoints
-@app.route('/api/conversations')
-def api_conversations():
-    """API endpoint for paginated conversation data"""
+@app.route('/api/sessions')
+def api_sessions():
+    """API endpoint for paginated session data"""
     try:
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', ITEMS_PER_PAGE))
         search = request.args.get('search', '').strip()
-        sentiment_filter = request.args.get('sentiment', '').strip()
+        performance_filter = request.args.get('performance', '').strip()
         status_filter = request.args.get('status', '').strip()
         
         # Validate parameters
         page = max(1, page)
         per_page = min(50, max(5, per_page))
         
-        result = load_paginated_conversations(
+        result = load_paginated_sessions(
             page=page,
             per_page=per_page,
             search=search if search else None,
-            sentiment_filter=sentiment_filter if sentiment_filter else None,
+            performance_filter=performance_filter if performance_filter else None,
             status_filter=status_filter if status_filter else None
         )
         
@@ -280,12 +321,22 @@ def api_conversations():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-@app.route('/api/conversation/<conversation_id>/analyze')
-def api_analyze_conversation(conversation_id):
-    """API endpoint to analyze a specific conversation on demand"""
+@app.route('/api/session/<session_id>/details')
+def api_session_details(session_id):
+    """API endpoint to get detailed session analysis"""
     try:
-        analysis = analyze_conversation_on_demand(conversation_id)
-        return jsonify(analysis)
+        df = pd.read_csv(LOG_FILE_PATH)
+        df.columns = df.columns.str.strip()
+        df = df[df['Message Role'] != 'N/A']
+        df = df[df['Message Text'].notna()]
+        
+        conv_data = df[df['Conversation ID'] == session_id]
+        if conv_data.empty:
+            return jsonify({"error": "Session not found"})
+        
+        session_summary = get_session_summary(session_id, conv_data)
+        return jsonify(session_summary)
+        
     except Exception as e:
         return jsonify({"error": str(e)})
 
@@ -293,60 +344,81 @@ def api_analyze_conversation(conversation_id):
 def api_agent_performance_overview():
     """API endpoint for agent performance overview on dashboard"""
     try:
-        # Get basic conversation stats
-        total_conversations = get_total_conversations_count()
-        
-        # Load some sample data for demo
+        # Load and process data
         df = pd.read_csv(LOG_FILE_PATH)
         df.columns = df.columns.str.strip()
         df = df[df['Message Role'] != 'N/A']
         df = df[df['Message Text'].notna()]
+        df = df[df['Message Text'] != 'No transcript available']
         
-        unique_agents = df['Agent ID'].nunique() if 'Agent ID' in df.columns else 0
+        total_sessions = df['Conversation ID'].nunique()
+        unique_agents = df['Agent ID'].nunique() if 'Agent ID' in df.columns else 1
         
-        # Create mock performance data for the dashboard
+        # Quick analysis of few sessions for overview
+        sample_sessions = []
+        for conv_id in df['Conversation ID'].unique()[:10]:  # Sample first 10
+            conv_data = df[df['Conversation ID'] == conv_id]
+            session_summary = get_session_summary(conv_id, conv_data)
+            sample_sessions.append(session_summary)
+        
+        if sample_sessions:
+            avg_performance = np.mean([s['performance_score'] for s in sample_sessions])
+            avg_product_pitch = np.mean([s['product_pitch_score'] for s in sample_sessions])
+            avg_objection_handling = np.mean([s['objection_handling_score'] for s in sample_sessions])
+            avg_communication = np.mean([s['communication_skills_score'] for s in sample_sessions])
+            
+            # Count performance levels
+            excellent_count = len([s for s in sample_sessions if s['performance_score'] >= 4.0])
+            good_count = len([s for s in sample_sessions if 3.0 <= s['performance_score'] < 4.0])
+            needs_improvement_count = len([s for s in sample_sessions if s['performance_score'] < 3.0])
+        else:
+            avg_performance = 0
+            avg_product_pitch = avg_objection_handling = avg_communication = 0
+            excellent_count = good_count = needs_improvement_count = 0
+        
         performance_data = {
             'total_agents': unique_agents,
-            'total_sessions': total_conversations,
-            'avg_performance': 3.7,
-            'improvement_rate': '+12%',
-            'total_analyzed': 0,
-            'has_analysis': False,
-            'analysis_status': 'Ready for AI analysis. Click "Refresh AI Insights" to start.',
+            'total_sessions': total_sessions,
+            'avg_performance': round(avg_performance, 1),
+            'sessions_analyzed': len(sample_sessions),
+            'has_analysis': len(sample_sessions) > 0,
+            'analysis_status': f'Analyzed {len(sample_sessions)} sample sessions. Click "Analyze All Sessions" for complete analysis.',
             'product_pitch': {
-                'score': 3.8,
-                'status': 'good'
+                'score': round(avg_product_pitch, 1),
+                'status': 'good' if avg_product_pitch >= 3.5 else 'needs-improvement' if avg_product_pitch >= 2.5 else 'poor'
             },
             'objection_handling': {
-                'score': 3.2,
-                'status': 'needs-improvement'
+                'score': round(avg_objection_handling, 1),
+                'status': 'good' if avg_objection_handling >= 3.5 else 'needs-improvement' if avg_objection_handling >= 2.5 else 'poor'
             },
             'communication': {
-                'score': 3.9,
-                'status': 'good'
+                'score': round(avg_communication, 1),
+                'status': 'good' if avg_communication >= 3.5 else 'needs-improvement' if avg_communication >= 2.5 else 'poor'
+            },
+            'performance_distribution': {
+                'excellent': excellent_count,
+                'good': good_count,
+                'needs_improvement': needs_improvement_count
             },
             'top_performers': [
                 {
-                    'rank': 1,
-                    'agent_id': 'Agent-001',
-                    'conversation_id': 'Sample',
-                    'overall_score': 4.2
-                },
-                {
-                    'rank': 2,
-                    'agent_id': 'Agent-002', 
-                    'conversation_id': 'Sample',
-                    'overall_score': 3.9
+                    'rank': i+1,
+                    'agent_id': session['agent_id'],
+                    'session_id': session['session_id'],
+                    'overall_score': session['performance_score']
                 }
+                for i, session in enumerate(sorted(sample_sessions, key=lambda x: x['performance_score'], reverse=True)[:3])
             ],
             'needs_attention': [
                 {
-                    'agent_id': 'Agent-003',
+                    'agent_id': session['agent_id'],
+                    'session_id': session['session_id'],
                     'issue_type': 'low_performance',
-                    'weakest_area': 'Objection Handling',
-                    'weakest_score': 2.3,
-                    'overall_score': 2.8
+                    'weakest_area': session['improvement_areas'][0] if session['improvement_areas'] else 'General',
+                    'overall_score': session['performance_score']
                 }
+                for session in sorted(sample_sessions, key=lambda x: x['performance_score'])[:3]
+                if session['performance_score'] < 3.0
             ]
         }
         
@@ -355,71 +427,82 @@ def api_agent_performance_overview():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-@app.route('/api/generate-performance-report')
-def api_generate_performance_report():
-    """API endpoint to generate performance report"""
-    if not ai_analyzer:
-        return jsonify({"error": "AI Analyzer not available"})
-    
-    try:
-        filename = f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        result = ai_analyzer.generate_full_report(f"../{filename}")
-        
-        return jsonify({
-            "status": "success",
-            "message": result,
-            "filename": filename
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-@app.route('/api/refresh-ai-insights', methods=['POST'])
-def api_refresh_ai_insights():
-    """API endpoint to refresh AI insights"""
-    if not ai_analyzer:
-        return jsonify({"error": "AI Analyzer not available"})
-    
-    try:
-        # This would trigger a background analysis
-        # For now, just return success
-        return jsonify({
-            "status": "success",
-            "message": "AI insights refreshed successfully"
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
 @app.route('/api/training-recommendations')
 def api_training_recommendations():
     """API endpoint for training recommendations"""
     try:
-        recommendations = {
-            "total_analyzed": 0,
-            "recommendations": [
+        # Load sample data for recommendations
+        df = pd.read_csv(LOG_FILE_PATH)
+        df.columns = df.columns.str.strip()
+        df = df[df['Message Role'] != 'N/A']
+        df = df[df['Message Text'].notna()]
+        
+        sample_sessions = []
+        for conv_id in df['Conversation ID'].unique()[:20]:  # Analyze more for recommendations
+            conv_data = df[df['Conversation ID'] == conv_id]
+            session_summary = get_session_summary(conv_id, conv_data)
+            sample_sessions.append(session_summary)
+        
+        # Analyze common weaknesses
+        all_improvement_areas = []
+        for session in sample_sessions:
+            all_improvement_areas.extend(session['improvement_areas'])
+        
+        from collections import Counter
+        weakness_counts = Counter(all_improvement_areas)
+        
+        recommendations_list = []
+        
+        if weakness_counts.get('Objection Handling', 0) > len(sample_sessions) * 0.3:
+            recommendations_list.append({
+                "title": "Objection Handling Workshop",
+                "description": f"{weakness_counts['Objection Handling']} agents need improvement in handling customer objections and concerns",
+                "priority": "high",
+                "affected_agents": weakness_counts['Objection Handling']
+            })
+        
+        if weakness_counts.get('Product Pitch', 0) > len(sample_sessions) * 0.2:
+            recommendations_list.append({
+                "title": "Product Knowledge Training",
+                "description": f"{weakness_counts['Product Pitch']} agents need better product knowledge and presentation skills",
+                "priority": "medium",
+                "affected_agents": weakness_counts['Product Pitch']
+            })
+        
+        if weakness_counts.get('Communication Skills', 0) > len(sample_sessions) * 0.2:
+            recommendations_list.append({
+                "title": "Communication Skills Enhancement",
+                "description": f"{weakness_counts['Communication Skills']} agents need improvement in communication and rapport building",
+                "priority": "medium",
+                "affected_agents": weakness_counts['Communication Skills']
+            })
+        
+        # Add general recommendations if no specific weaknesses found
+        if not recommendations_list:
+            recommendations_list = [
                 {
-                    "title": "Improve Product Knowledge",
-                    "description": "Agents need better understanding of policy details and benefits",
-                    "priority": "high"
+                    "title": "Advanced Sales Techniques",
+                    "description": "Continue building on strong foundation with advanced sales methodologies",
+                    "priority": "leverage",
+                    "affected_agents": len(sample_sessions)
                 },
                 {
-                    "title": "Objection Handling Training", 
-                    "description": "Focus on addressing common customer concerns about pricing",
-                    "priority": "medium"
-                },
-                {
-                    "title": "Communication Skills Enhancement",
-                    "description": "Leverage existing strong communication abilities for better outcomes",
-                    "priority": "leverage"
+                    "title": "Role-Play Practice Sessions",
+                    "description": "Regular practice sessions to maintain and improve current skill levels",
+                    "priority": "medium",
+                    "affected_agents": len(sample_sessions)
                 }
             ]
+        
+        recommendations = {
+            "total_analyzed": len(sample_sessions),
+            "recommendations": recommendations_list
         }
         return jsonify(recommendations)
     except Exception as e:
         return jsonify({"error": str(e)})
 
 if __name__ == '__main__':
-    print("🚀 Starting AIA Analytics Dashboard with Lazy Loading...")
+    print("🚀 Starting AIA Analytics Dashboard - Agent Performance Focus...")
     print(f"📊 AI Analyzer Status: {'✅ Connected' if ai_analyzer else '❌ Not Available'}")
-    total_conversations = get_total_conversations_count()
-    print(f"📈 Total Conversations Available: {total_conversations:,}")
     app.run(debug=True, host='0.0.0.0', port=5801)
