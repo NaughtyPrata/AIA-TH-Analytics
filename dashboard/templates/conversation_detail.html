@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Conversation {{ conversation_id }} - AIA Analytics{% endblock %}
+
+{% block header %}Conversation Details{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Back Button -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <a href="/conversations" class="mr-4 text-gray-600 hover:text-gray-800">
+                <i class="lni lni-arrow-left text-xl"></i>
+            </a>
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">{{ conversation_id }}</h2>
+                <p class="text-sm text-gray-500">Detailed conversation analysis</p>
+            </div>
+        </div>
+        <button onclick="exportConversation()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+            <i class="lni lni-download mr-2"></i>
+            Export Analysis
+        </button>
+    </div>
+
+    <!-- AI Analysis Summary -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">AI Analysis Summary</h3>
+        </div>
+        <div id="ai-analysis-summary" class="p-6">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Analysis Details Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Customer Intent & Sentiment -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Customer Analysis</h3>
+            </div>
+            <div id="customer-analysis" class="p-6">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Issues & Resolution -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Issues & Resolution</h3>
+            </div>
+            <div id="issues-resolution" class="p-6">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Interest -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Product Interest</h3>
+        </div>
+        <div id="product-interest" class="p-6">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+    </div>
+
+    <!-- AI Recommendations -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">AI Recommendations</h3>
+        </div>
+        <div id="ai-recommendations" class="p-6">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Conversation Messages -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Full Conversation</h3>
+            <p class="text-sm text-gray-500">Complete message history</p>
+        </div>
+        <div class="p-6">
+            <div id="conversation-messages" class="space-y-4 max-h-96 overflow-y-auto">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="text-center py-8">
+        <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-gray-500 bg-white">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading conversation details...
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const conversationId = '{{ conversation_id }}';
+let conversationData = null;
+
+// Load conversation details
+async function loadConversationDetails() {
+    try {
+        document.getElementById('loading-state').classList.remove('hidden');
+        
+        const response = await fetch(`/api/conversation/${conversationId}`);
+        conversationData = await response.json();
+        
+        document.getElementById('loading-state').classList.add('hidden');
+        
+        if (conversationData.error) {
+            showError(conversationData.error);
+        } else {
+            renderConversationDetails();
+        }
+        
+    } catch (error) {
+        console.error('Error loading conversation details:', error);
+        document.getElementById('loading-state').classList.add('hidden');
+        showError('Failed to load conversation details');
+    }
+}
+
+function renderConversationDetails() {
+    // AI Analysis Summary
+    const summary = document.getElementById('ai-analysis-summary');
+    const basicInfo = conversationData.basic_info || {};
+    
+    summary.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-900">${basicInfo['Total Messages'] || 0}</div>
+                <div class="text-sm text-gray-500">Total Messages</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-900">${Math.round(basicInfo['Duration (min)'] || 0)}</div>
+                <div class="text-sm text-gray-500">Duration (minutes)</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-900">${formatDateTime(basicInfo['Start Time'])}</div>
+                <div class="text-sm text-gray-500">Started</div>
+            </div>
+        </div>
+    `;
+
+    // Customer Analysis
+    const customerAnalysis = document.getElementById('customer-analysis');
+    const aiAnalysis = conversationData.ai_analysis || {};
+    
+    customerAnalysis.innerHTML = `
+        <div class="space-y-4">
+            <div>
+                <h4 class="text-sm font-medium text-gray-900">Customer Intent</h4>
+                <p class="mt-1 text-sm text-gray-600">${aiAnalysis.customer_intent || 'No analysis available'}</p>
+            </div>
+            <div>
+                <h4 class="text-sm font-medium text-gray-900">Sentiment</h4>
+                <span class="mt-1 px-3 py-1 text-sm font-medium rounded-full ${getSentimentColor(aiAnalysis.sentiment)}">
+                    ${aiAnalysis.sentiment || 'unknown'}
+                </span>
+            </div>
+        </div>
+    `;
+
+    // Issues & Resolution
+    const issuesResolution = document.getElementById('issues-resolution');
+    const issues = aiAnalysis.issues_identified || [];
+    
+    issuesResolution.innerHTML = `
+        <div class="space-y-4">
+            <div>
+                <h4 class="text-sm font-medium text-gray-900">Issues Identified (${issues.length})</h4>
+                ${issues.length > 0 ? `
+                    <ul class="mt-2 space-y-1">
+                        ${issues.map(issue => `<li class="text-sm text-gray-600 flex items-start"><i class="lni lni-warning text-yellow-500 mr-2 mt-0.5"></i>${issue}</li>`).join('')}
+                    </ul>
+                ` : '<p class="mt-1 text-sm text-gray-500">No issues identified</p>'}
+            </div>
+            <div>
+                <h4 class="text-sm font-medium text-gray-900">Resolution Status</h4>
+                <span class="mt-1 px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(aiAnalysis.resolution_status)}">
+                    ${aiAnalysis.resolution_status || 'unknown'}
+                </span>
+            </div>
+        </div>
+    `;
+
+    // Product Interest
+    const productInterest = document.getElementById('product-interest');
+    const products = aiAnalysis.product_interest || [];
+    
+    productInterest.innerHTML = `
+        <div>
+            ${products.length > 0 ? `
+                <div class="flex flex-wrap gap-2">
+                    ${products.map(product => `
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                            ${product}
+                        </span>
+                    `).join('')}
+                </div>
+            ` : '<p class="text-sm text-gray-500">No specific product interest identified</p>'}
+        </div>
+    `;
+
+    // AI Recommendations
+    const recommendations = document.getElementById('ai-recommendations');
+    const recs = aiAnalysis.recommendations || [];
+    
+    recommendations.innerHTML = `
+        <div>
+            ${recs.length > 0 ? `
+                <ul class="space-y-3">
+                    ${recs.map(rec => `
+                        <li class="flex items-start">
+                            <i class="lni lni-bulb text-green-500 mr-3 mt-0.5"></i>
+                            <span class="text-sm text-gray-700">${rec}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            ` : '<p class="text-sm text-gray-500">No recommendations available</p>'}
+        </div>
+    `;
+
+    // Conversation Messages
+    const messages = document.getElementById('conversation-messages');
+    const messagesList = conversationData.messages || [];
+    
+    messages.innerHTML = `
+        <div class="space-y-4">
+            ${messagesList.map(msg => `
+                <div class="flex ${msg['Message Role'] === 'Customer' ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        msg['Message Role'] === 'Customer' 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-200 text-gray-800'
+                    }">
+                        <div class="text-xs font-medium mb-1">${msg['Message Role']}</div>
+                        <div class="text-sm">${msg['Message Text'] || 'No message content'}</div>
+                        <div class="text-xs mt-1 opacity-75">
+                            ${formatDateTime(msg['Created At'])}
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+
+function getSentimentColor(sentiment) {
+    switch (sentiment) {
+        case 'positive': return 'bg-green-100 text-green-800';
+        case 'negative': return 'bg-red-100 text-red-800';
+        case 'neutral': return 'bg-yellow-100 text-yellow-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+}
+
+function getStatusColor(status) {
+    switch (status) {
+        case 'resolved': return 'bg-green-100 text-green-800';
+        case 'partially_resolved': return 'bg-yellow-100 text-yellow-800';
+        case 'unresolved': return 'bg-red-100 text-red-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+}
+
+function showError(message) {
+    const errorHTML = `
+        <div class="text-center py-8">
+            <div class="mx-auto h-12 w-12 text-red-400">
+                <i class="lni lni-warning text-4xl"></i>
+            </div>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">Error Loading Conversation</h3>
+            <p class="mt-1 text-sm text-gray-500">${message}</p>
+        </div>
+    `;
+    document.querySelector('.space-y-6').innerHTML = errorHTML;
+}
+
+function exportConversation() {
+    if (!conversationData) {
+        alert('No conversation data to export');
+        return;
+    }
+
+    const exportData = {
+        conversation_id: conversationId,
+        export_date: new Date().toISOString(),
+        basic_info: conversationData.basic_info,
+        ai_analysis: conversationData.ai_analysis,
+        messages: conversationData.messages
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `conversation_${conversationId}_analysis.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadConversationDetails();
+});
+</script>
+{% endblock %}

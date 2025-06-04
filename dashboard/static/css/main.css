@@ -1,0 +1,266 @@
+/* Custom styles for AIA Analytics Dashboard */
+
+body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Smooth transitions */
+* {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Loading animations */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom button styles */
+.btn-primary {
+    @apply bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+}
+
+.btn-secondary {
+    @apply bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+}
+
+/* Card hover effects */
+.card {
+    @apply bg-white rounded-lg shadow transition-shadow duration-200;
+}
+
+.card:hover {
+    @apply shadow-lg;
+}
+
+/* Status badges */
+.badge {
+    @apply px-2 py-1 text-xs font-medium rounded-full;
+}
+
+.badge-positive {
+    @apply bg-green-100 text-green-800;
+}
+
+.badge-negative {
+    @apply bg-red-100 text-red-800;
+}
+
+.badge-neutral {
+    @apply bg-yellow-100 text-yellow-800;
+}
+
+.badge-resolved {
+    @apply bg-green-100 text-green-800;
+}
+
+.badge-partially-resolved {
+    @apply bg-yellow-100 text-yellow-800;
+}
+
+.badge-unresolved {
+    @apply bg-red-100 text-red-800;
+}
+
+.badge-unknown {
+    @apply bg-gray-100 text-gray-800;
+}
+
+/* Sidebar active state */
+.nav-link.active {
+    @apply bg-red-50 text-red-600;
+}
+
+/* Table row hover */
+.table-row {
+    @apply hover:bg-gray-50 transition-colors duration-150;
+}
+
+/* Chart containers */
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+/* Message bubbles */
+.message-bubble {
+    @apply max-w-xs lg:max-w-md px-4 py-2 rounded-lg;
+}
+
+.message-customer {
+    @apply bg-blue-500 text-white ml-auto;
+}
+
+.message-agent {
+    @apply bg-gray-200 text-gray-800;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+    backdrop-filter: blur(4px);
+}
+
+/* Loading skeleton */
+.skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+}
+
+.skeleton-text {
+    @apply h-4 bg-gray-200 rounded;
+}
+
+.skeleton-circle {
+    @apply rounded-full bg-gray-200;
+}
+
+/* Responsive grid improvements */
+@media (max-width: 768px) {
+    .grid-responsive {
+        @apply grid-cols-1;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-break {
+        page-break-before: always;
+    }
+}
+
+/* Focus styles for accessibility */
+.focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+}
+
+/* Animation utilities */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+/* Custom utilities */
+.text-shadow {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.border-gradient {
+    border-image: linear-gradient(45deg, #667eea, #764ba2) 1;
+}
+
+/* AIA brand colors */
+.text-aia-red {
+    color: #DC2626;
+}
+
+.bg-aia-red {
+    background-color: #DC2626;
+}
+
+.border-aia-red {
+    border-color: #DC2626;
+}
+
+/* Dashboard specific */
+.dashboard-card {
+    @apply bg-white rounded-lg shadow-sm p-6 transition-all duration-200 hover:shadow-md;
+}
+
+.stat-number {
+    @apply text-2xl font-bold text-gray-900;
+}
+
+.stat-label {
+    @apply text-sm font-medium text-gray-500;
+}
+
+/* Progress bars */
+.progress-bar {
+    @apply bg-gray-200 rounded-full overflow-hidden;
+}
+
+.progress-fill {
+    @apply bg-red-600 h-full transition-all duration-300 ease-out;
+}
+
+/* Notification styles */
+.notification {
+    @apply fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm;
+}
+
+.notification-success {
+    @apply bg-green-100 border border-green-400 text-green-700;
+}
+
+.notification-error {
+    @apply bg-red-100 border border-red-400 text-red-700;
+}
+
+.notification-warning {
+    @apply bg-yellow-100 border border-yellow-400 text-yellow-700;
+}
+
+.notification-info {
+    @apply bg-blue-100 border border-blue-400 text-blue-700;
+}

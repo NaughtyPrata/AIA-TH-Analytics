@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Conversations - AIA Analytics{% endblock %}
+
+{% block header %}Conversations{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Search and Filters -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex-1">
+                <input type="text" id="search-conversations" placeholder="Search conversations..." 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+            </div>
+            <div class="flex gap-2">
+                <select id="sentiment-filter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                    <option value="">All Sentiments</option>
+                    <option value="positive">Positive</option>
+                    <option value="neutral">Neutral</option>
+                    <option value="negative">Negative</option>
+                </select>
+                <select id="status-filter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                    <option value="">All Statuses</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="partially_resolved">Partially Resolved</option>
+                    <option value="unresolved">Unresolved</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conversations Table -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">All Conversations</h3>
+            <p class="text-sm text-gray-500">Customer interactions with AI-powered analysis</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Conversation ID
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date & Time
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Duration
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Messages
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            AI Customer Intent
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            AI Sentiment
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Issues
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="conversations-table-body" class="bg-white divide-y divide-gray-200">
+                    <!-- Dynamic content will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-8">
+            <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-gray-500 bg-white">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading conversations...
+            </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="empty-state" class="text-center py-8 hidden">
+            <div class="mx-auto h-12 w-12 text-gray-400">
+                <i class="lni lni-comments text-4xl"></i>
+            </div>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No conversations found</h3>
+            <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+        <div class="flex-1 flex justify-between sm:hidden">
+            <button id="prev-mobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Previous
+            </button>
+            <button id="next-mobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+            </button>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Showing <span id="showing-from" class="font-medium">1</span> to <span id="showing-to" class="font-medium">10</span> of <span id="total-conversations" class="font-medium">0</span> results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" id="pagination-controls">
+                    <!-- Pagination buttons will be generated here -->
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allConversations = [];
+let filteredConversations = [];
+let currentPage = 1;
+const itemsPerPage = 20;
+
+// Load conversations data
+async function loadConversations() {
+    try {
+        document.getElementById('loading-state').classList.remove('hidden');
+        
+        const response = await fetch('/api/conversations');
+        allConversations = await response.json();
+        filteredConversations = [...allConversations];
+        
+        document.getElementById('loading-state').classList.add('hidden');
+        
+        renderConversations();
+        setupPagination();
+        
+    } catch (error) {
+        console.error('Error loading conversations:', error);
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('empty-state').classList.remove('hidden');
+    }
+}
+
+function renderConversations() {
+    const tbody = document.getElementById('conversations-table-body');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageConversations = filteredConversations.slice(startIndex, endIndex);
+    
+    if (pageConversations.length === 0) {
+        tbody.innerHTML = '';
+        document.getElementById('empty-state').classList.remove('hidden');
+        return;
+    }
+    
+    document.getElementById('empty-state').classList.add('hidden');
+    
+    tbody.innerHTML = pageConversations.map(conv => `
+        <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-medium text-gray-900">${conv['Conversation ID']}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">${formatDateTime(conv['Start Time'])}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-500">${Math.round(conv['Duration (min)'] || 0)} min</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">${conv['Total Messages'] || 0}</div>
+                <div class="text-xs text-gray-500">${conv['Customer Messages'] || 0} customer / ${conv['Agent Messages'] || 0} agent</div>
+            </td>
+            <td class="px-6 py-4">
+                <div class="text-sm text-gray-900 max-w-xs truncate" title="${conv.AI_Intent || 'No analysis available'}">
+                    ${conv.AI_Intent || 'No analysis available'}
+                </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${getSentimentColor(conv.AI_Sentiment)}">
+                    ${conv.AI_Sentiment || 'unknown'}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">${conv.AI_Issues_Count || 0}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(conv.AI_Status)}">
+                    ${conv.AI_Status || 'unknown'}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <a href="/conversation/${conv['Conversation ID']}" class="text-red-600 hover:text-red-700">
+                    View Details
+                </a>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function setupPagination() {
+    const totalPages = Math.ceil(filteredConversations.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage + 1;
+    const endIndex = Math.min(currentPage * itemsPerPage, filteredConversations.length);
+    
+    // Update showing text
+    document.getElementById('showing-from').textContent = startIndex;
+    document.getElementById('showing-to').textContent = endIndex;
+    document.getElementById('total-conversations').textContent = filteredConversations.length;
+    
+    // Generate pagination controls
+    const paginationControls = document.getElementById('pagination-controls');
+    let paginationHTML = '';
+    
+    // Previous button
+    paginationHTML += `
+        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}
+                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${currentPage === 1 ? 'cursor-not-allowed opacity-50' : ''}">
+            <i class="lni lni-chevron-left"></i>
+        </button>
+    `;
+    
+    // Page numbers
+    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+        paginationHTML += `
+            <button onclick="changePage(${i})" 
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 ${i === currentPage ? 'bg-red-50 border-red-500 text-red-600' : ''}">
+                ${i}
+            </button>
+        `;
+    }
+    
+    // Next button
+    paginationHTML += `
+        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}
+                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${currentPage === totalPages ? 'cursor-not-allowed opacity-50' : ''}">
+            <i class="lni lni-chevron-right"></i>
+        </button>
+    `;
+    
+    paginationControls.innerHTML = paginationHTML;
+}
+
+function changePage(page) {
+    const totalPages = Math.ceil(filteredConversations.length / itemsPerPage);
+    if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        renderConversations();
+        setupPagination();
+    }
+}
+
+function filterConversations() {
+    const searchTerm = document.getElementById('search-conversations').value.toLowerCase();
+    const sentimentFilter = document.getElementById('sentiment-filter').value;
+    const statusFilter = document.getElementById('status-filter').value;
+    
+    filteredConversations = allConversations.filter(conv => {
+        const matchesSearch = !searchTerm || 
+            conv['Conversation ID'].toLowerCase().includes(searchTerm) ||
+            (conv.AI_Intent && conv.AI_Intent.toLowerCase().includes(searchTerm));
+        
+        const matchesSentiment = !sentimentFilter || conv.AI_Sentiment === sentimentFilter;
+        const matchesStatus = !statusFilter || conv.AI_Status === statusFilter;
+        
+        return matchesSearch && matchesSentiment && matchesStatus;
+    });
+    
+    currentPage = 1;
+    renderConversations();
+    setupPagination();
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+
+function getSentimentColor(sentiment) {
+    switch (sentiment) {
+        case 'positive': return 'bg-green-100 text-green-800';
+        case 'negative': return 'bg-red-100 text-red-800';
+        case 'neutral': return 'bg-yellow-100 text-yellow-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+}
+
+function getStatusColor(status) {
+    switch (status) {
+        case 'resolved': return 'bg-green-100 text-green-800';
+        case 'partially_resolved': return 'bg-yellow-100 text-yellow-800';
+        case 'unresolved': return 'bg-red-100 text-red-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    loadConversations();
+    
+    // Setup search and filter listeners
+    document.getElementById('search-conversations').addEventListener('input', filterConversations);
+    document.getElementById('sentiment-filter').addEventListener('change', filterConversations);
+    document.getElementById('status-filter').addEventListener('change', filterConversations);
+});
+</script>
+{% endblock %}

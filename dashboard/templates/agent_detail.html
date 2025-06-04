@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Agent Detail - AIA Analytics Dashboard{% endblock %}
+
+{% block header %}Agent Detail{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="p-6 border-b">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800">Agent <span id="agent-id" class="text-aia-red">{{ agent_id }}</span></h2>
+                <p class="text-gray-500 mt-1" id="agent-status">Active</p>
+            </div>
+            <div class="flex space-x-3">
+                <button class="c-button c-button--secondary">
+                    <i class="lni lni-download mr-2"></i> Export Report
+                </button>
+                <button class="c-button c-button--primary">
+                    <i class="lni lni-graph mr-2"></i> Compare
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Summary -->
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="border rounded-lg p-4">
+                <div class="text-sm text-gray-500">Total Conversations</div>
+                <div class="text-xl font-semibold mt-1" id="agent-conversations">Loading...</div>
+            </div>
+            <div class="border rounded-lg p-4">
+                <div class="text-sm text-gray-500">Average Score</div>
+                <div class="text-xl font-semibold mt-1 flex items-center">
+                    <span id="agent-avg-score">Loading...</span>
+                    <span class="text-sm text-gray-500 ml-1">/5</span>
+                </div>
+            </div>
+            <div class="border rounded-lg p-4">
+                <div class="text-sm text-gray-500">Consistency Score</div>
+                <div class="text-xl font-semibold mt-1" id="agent-consistency">Loading...</div>
+            </div>
+            <div class="border rounded-lg p-4">
+                <div class="text-sm text-gray-500">Agent Type</div>
+                <div class="text-xl font-semibold mt-1" id="agent-type">Loading...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Metrics -->
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="p-6 border-b">
+        <h3 class="text-lg font-semibold text-gray-800">Performance Metrics</h3>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Radar Chart -->
+            <div>
+                <h4 class="text-md font-medium text-gray-700 mb-4">Category Scores</h4>
+                <div class="h-80">
+                    <canvas id="radar-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Spider Chart (Detailed Metrics) -->
+            <div>
+                <h4 class="text-md font-medium text-gray-700 mb-4">Detailed Metrics</h4>
+                <div class="h-80">
+                    <canvas id="spider-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Over Time -->
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="p-6 border-b">
+        <h3 class="text-lg font-semibold text-gray-800">Performance Over Time</h3>
+    </div>
+    <div class="p-6">
+        <div class="h-80">
+            <canvas id="time-series-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Conversations -->
+<div class="bg-white rounded-lg shadow">
+    <div class="p-6 border-b">
+        <h3 class="text-lg font-semibold text-gray-800">Recent Conversations</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversation ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Messages</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200" id="recent-conversations">
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading conversations...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="bg-gray-50 px-6 py-3 flex justify-between items-center">
+        <span class="text-sm text-gray-700">
+            Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium" id="total-entries">many</span> entries
+        </span>
+        <div class="flex space-x-2">
+            <button class="px-3 py-1 border rounded text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50">Previous</button>
+            <button class="px-3 py-1 border rounded text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50">Next</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const agentId = document.getElementById('agent-id').textContent.trim();
+        
+        // Fetch agent details
+        fetch(`/api/agents`)
+            .then(response => response.json())
+            .then(data => {
+                const agent = data.find(a => a['Agent ID'] === agentId);
+                
+                if (agent) {
+                    // Update summary info
+                    document.getElementById('agent-conversations').textContent = agent['Conversations'] || 'N/A';
+                    
+                    // Calculate and display average score
+                    let totalScore = 0;
+                    let categoryCount = 0;
+                    
+                    for (const category in agent['Categories']) {
+                        totalScore += agent['Categories'][category]['Score'];
+                        categoryCount++;
+                    }
+                    
+                    const avgScore = categoryCount > 0 ? (totalScore / categoryCount).toFixed(1) : 'N/A';
+                    document.getElementById('agent-avg-score').textContent = avgScore;
+                    
+                    // Set a random consistency score for demonstration
+                    const consistencyScore = (Math.random() * 0.5 + 0.2).toFixed(2);
+                    document.getElementById('agent-consistency').textContent = consistencyScore;
+                    
+                    // Determine agent type based on metrics
+                    let agentType = 'Balanced';
+                    const ppScore = agent['Categories']['Product Pitch']['Score'] || 0;
+                    const csScore = agent['Categories']['Communication Skills']['Score'] || 0;
+                    const ohScore = agent['Categories']['Objection Handling']['Score'] || 0;
+                    
+                    if (ppScore > csScore && ppScore > ohScore) {
+                        agentType = 'Pitch Pro';
+                    } else if (csScore > ppScore && csScore > ohScore) {
+                        agentType = 'Communicator';
+                    } else if (ohScore > ppScore && ohScore > csScore) {
+                        agentType = 'Objection Handler';
+                    }
+                    
+                    document.getElementById('agent-type').textContent = agentType;
+                    
+                    // Render charts
+                    renderRadarChart(agent);
+                    renderSpiderChart(agent);
+                    renderTimeSeriesChart(agentId);
+                    
+                    // Fetch and render recent conversations
+                    fetch('/api/conversations')
+                        .then(response => response.json())
+                        .then(conversations => {
+                            // Filter conversations for this agent
+                            const agentConversations = conversations.filter(c => c['Agent ID'] === agentId);
+                            renderRecentConversations(agentConversations.slice(0, 10));
+                            document.getElementById('total-entries').textContent = agentConversations.length;
+                        });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching agent details:', error);
+            });
+    });
+    
+    function renderRadarChart(agent) {
+        const ctx = document.getElementById('radar-chart').getContext('2d');
+        
+        // Get categories and scores
+        const categories = Object.keys(agent['Categories']);
+        const scores = categories.map(category => agent['Categories'][category]['Score']);
+        
+        // Create average scores for comparison
+        const avgScores = categories.map(() => 3.5);
+        
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: categories,
+                datasets: [{
+                    label: 'Agent Score',
+                    data: scores,
+                    backgroundColor: 'rgba(237, 28, 36, 0.2)',
+                    borderColor: 'rgba(237, 28, 36, 1)',
+                    pointBackgroundColor: 'rgba(237, 28, 36, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(237, 28, 36, 1)'
+                }, {
+                    label: 'Team Average',
+                    data: avgScores,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 5
+                    }
+                }
+            }
+        });
+    }
+    
+    function renderSpiderChart(agent) {
+        const ctx = document.getElementById('spider-chart').getContext('2d');
+        
+        // Create sample detailed metrics
+        const metrics = [
+            'Explain benefits',
+            'Product details',
+            'Objection handling',
+            'Rapport building',
+            'Closing skills',
+            'Active listening'
+        ];
+        
+        // Generate random scores for detailed metrics
+        const scores = metrics.map(() => Math.round((Math.random() * 3 + 2) * 10) / 10);
+        
+        // Create average scores for comparison
+        const avgScores = metrics.map(() => 3.5);
+        
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: metrics,
+                datasets: [{
+                    label: 'Agent Score',
+                    data: scores,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(255, 99, 132, 1)'
+                }, {
+                    label: 'Team Average',
+                    data: avgScores,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 5
+                    }
+                }
+            }
+        });
+    }
+    
+    function renderTimeSeriesChart(agentId) {
+        const ctx = document.getElementById('time-series-chart').getContext('2d');
+        
+        // Generate sample dates for the last 10 days
+        const dates = [];
+        const now = new Date();
+        for (let i = 9; i >= 0; i--) {
+            const date = new Date(now);
+            date.setDate(now.getDate() - i);
+            dates.push(date.toLocaleDateString());
+        }
+        
+        // Generate random scores for each day
+        const scores = [];
+        let lastScore = 3.5;
+        for (let i = 0; i < 10; i++) {
+            // Generate a score that's somewhat related to the previous score (for trend realism)
+            const change = (Math.random() - 0.5) * 0.5;
+            lastScore = Math.max(1, Math.min(5, lastScore + change));
+            scores.push(lastScore);
+        }
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Average Score',
+                    data: scores,
+                    backgroundColor: 'rgba(237, 28, 36, 0.2)',
+                    borderColor: 'rgba(237, 28, 36, 1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 1,
+                        max: 5,
+                        title: {
+                            display: true,
+                            text: 'Score'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function renderRecentConversations(conversations) {
+        const tbody = document.getElementById('recent-conversations');
+        tbody.innerHTML = '';
+        
+        if (conversations.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan="6" class="px-6 py-4 text-center text-gray-500">No conversations found</td>`;
+            tbody.appendChild(row);
+            return;
+        }
+        
+        conversations.forEach(conv => {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            
+            const date = new Date(conv['Start Time']).toLocaleDateString();
+            const duration = conv['Duration (min)'] ? conv['Duration (min)'].toFixed(1) + ' min' : 'N/A';
+            
+            // Generate a random score for demonstration
+            const randomScore = (Math.random() * 2 + 3).toFixed(1);
+            
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-blue-600">${conv['Conversation ID']}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">${date}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">${duration}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">${conv['Message Count'] || 'N/A'}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">${randomScore}/5</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <a href="/conversation/${conv['Conversation ID']}" class="text-blue-600 hover:text-blue-900">View</a>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AIA Analytics Dashboard{% endblock %}</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Line Icons -->
+    <link href="https://cdn.lineicons.com/3.0/lineicons.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="bg-white shadow-md w-64 hidden md:block flex-shrink-0">
+            <div class="flex items-center justify-center h-16 border-b">
+                <span class="text-red-600 font-bold text-xl">AIA Analytics</span>
+            </div>
+            <nav class="mt-5">
+                <ul>
+                    <li class="px-5">
+                        <a href="/" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
+                            <i class="lni lni-dashboard mr-3"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="px-5">
+                        <a href="/agents" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
+                            <i class="lni lni-users mr-3"></i>
+                            <span>Agents</span>
+                        </a>
+                    </li>
+                    <li class="px-5">
+                        <a href="/conversations" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
+                            <i class="lni lni-comments mr-3"></i>
+                            <span>Conversations</span>
+                        </a>
+                    </li>
+                    <li class="px-5">
+                        <a href="/trends" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
+                            <i class="lni lni-stats-up mr-3"></i>
+                            <span>Trends</span>
+                        </a>
+                    </li>
+                    <li class="px-5">
+                        <a href="/settings" class="flex items-center h-12 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg">
+                            <i class="lni lni-cog mr-3"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6">
+                <div class="flex items-center">
+                    <button class="md:hidden mr-4 text-gray-600">
+                        <i class="lni lni-menu text-xl"></i>
+                    </button>
+                    <h1 class="text-xl font-semibold text-gray-800">{% block header %}Dashboard{% endblock %}</h1>
+                </div>
+                <div class="flex items-center">
+                    <div class="relative mr-4">
+                        <input type="text" placeholder="Search..." class="w-64 pr-8 pl-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300">
+                        <i class="lni lni-search absolute right-3 top-2.5 text-gray-400"></i>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-gray-700 mr-2">Admin</span>
+                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <i class="lni lni-user text-gray-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 
