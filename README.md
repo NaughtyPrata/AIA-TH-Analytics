@@ -21,44 +21,59 @@ This AI analyzer provides comprehensive insights into customer conversations, se
 ### 1. Setup
 ```bash
 # Run the setup script
-./setup.sh
+./scripts/setup.sh
 ```
 
 ### 2. Usage Options
 
 #### Interactive Analysis
 ```bash
-python3 ai_analyzer.py
+python3 src/ai_analyzer.py
 ```
 
 #### Quick Summary
 ```bash
-python3 quick_analysis.py summary
+python3 src/quick_analysis.py summary
 ```
 
 #### Analyze Specific Conversation
 ```bash
-python3 quick_analysis.py analyze AIA123456
+python3 src/quick_analysis.py analyze AIA123456
 ```
 
 #### Jupyter Notebook (Interactive)
 ```bash
-jupyter notebook analysis_notebook.ipynb
+jupyter notebook src/analysis_notebook.ipynb
 ```
 
 ## File Structure
 
 ```
 AIA-TH-Analytics/
-├── .env                          # OpenAI API key
-├── ai_analyzer.py               # Main analyzer class
-├── quick_analysis.py            # Quick analysis scripts
-├── analysis_notebook.ipynb     # Interactive Jupyter notebook
-├── requirements.txt             # Python dependencies
-├── setup.sh                     # Setup script
-├── log/
-│   └── transcript.csv          # Conversation data
-└── AIA_PayLifePlus_Brochure/   # Knowledge base
+├── .env                           # OpenAI API key
+├── README.md                      # Main documentation
+├── requirements.txt               # Python dependencies
+├── src/                           # Source code
+│   ├── ai_analyzer.py             # Main analyzer class
+│   ├── ai_analyzer_fixed.py       # Fixed version of analyzer
+│   ├── simple_ai_analyzer.py      # Simplified analyzer version
+│   ├── quick_analysis.py          # Quick analysis scripts
+│   ├── analysis_notebook.ipynb    # Interactive Jupyter notebook
+│   ├── demo.py                    # Demo application
+│   └── test_system.py             # Test utilities
+├── scripts/                       # Shell scripts
+│   ├── setup.sh                   # Setup script
+│   └── startup.sh                 # Startup script
+├── templates/                     # Template files
+│   └── agent_performance_template.json  # Agent performance template
+├── docs/                          # Documentation
+│   ├── DEPLOYMENT_COMPLETE.md     # Deployment documentation
+│   ├── SYSTEM_READY.md            # System readiness documentation
+│   └── various reports            # Analysis reports
+├── dashboard/                     # Dashboard application
+├── log/                           # Log files
+│   └── transcript.csv             # Conversation data
+└── AIA_PayLifePlus_Brochure/      # Knowledge base
     ├── page_001.md
     ├── page_002.md
     └── ...
@@ -114,7 +129,7 @@ Recommendations:
 ## API Usage Examples
 
 ```python
-from ai_analyzer import AIAAnalyzer
+from src.ai_analyzer import AIAAnalyzer
 
 # Initialize
 analyzer = AIAAnalyzer()
